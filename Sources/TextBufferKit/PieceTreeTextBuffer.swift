@@ -27,13 +27,13 @@
 // https://github.com/microsoft/vscode/blob/master/src/vs/editor/common/model/pieceTreeTextBuffer/pieceTreeTextBuffer.ts
 import Foundation
 
-public struct ValidatedEditOperation {
+public struct ValidatedEditOperation<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int, V.Element == UInt8 {
     var sortIndex: Int
     var identifier: SingleEditOperationIdentifier?
-    var range: Range
+    var range: Range<V>
     var rangeOffset: Int
     var rangeLength: Int
-    var lines: [[UInt8]]?
+    var lines: [V]?
     var forceMoveMarkers: Bool
     var isAutoWhitespaceEdit: Bool
 }
@@ -46,13 +46,13 @@ public struct SingleEditOperationIdentifier {
     public var minor: Int
 }
 
-public class IdentifiedSingleEditOperation {
+public class IdentifiedSingleEditOperation<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int, V.Element == UInt8 {
     /// An identifier associated with this single edit operation.
     public var identifier: SingleEditOperationIdentifier?
     /// The range to replace. This can be empty to emulate a simple insert.
-    public var range: Range
+    public var range: Range<V>
     /// The text to replace with. This can be null to emulate a simple delete.
-    public var text: [UInt8]?
+    public var text: V?
     /// This indicates that this operation has "insert" semantics.
     /// This indicates that this operation has "insert" semantics.
     public var forceMoveMarkers: Bool
@@ -62,7 +62,7 @@ public class IdentifiedSingleEditOperation {
     /// This indicates that this operation is in a set of operations that are tracked and should not be "simplified".
     var isTracked: Bool
     
-    internal init(identifier: SingleEditOperationIdentifier?, range: Range, text: [UInt8]?, forceMoveMarkers: Bool, isAutoWhitespaceEdit: Bool?, isTracked: Bool) {
+    internal init(identifier: SingleEditOperationIdentifier?, range: Range<V>, text: V?, forceMoveMarkers: Bool, isAutoWhitespaceEdit: Bool?, isTracked: Bool) {
         self.identifier = identifier
         self.range = range
         self.text = text
@@ -72,9 +72,9 @@ public class IdentifiedSingleEditOperation {
     }
 }
 
-public class ReverseSingleEditOperation: IdentifiedSingleEditOperation {
+public class ReverseSingleEditOperation<V: RangeReplaceableCollection & RandomAccessCollection & Hashable>: IdentifiedSingleEditOperation<V> where V.Index == Int, V.Element == UInt8 {
     var sortIndex: Int
-    internal init(sortIndex: Int, identifier: SingleEditOperationIdentifier?, range: Range, text: [UInt8]?, forceMoveMarkers: Bool, isAutoWhitespaceEdit: Bool?, isTracked: Bool) {
+    internal init(sortIndex: Int, identifier: SingleEditOperationIdentifier?, range: Range<V>, text: V?, forceMoveMarkers: Bool, isAutoWhitespaceEdit: Bool?, isTracked: Bool) {
         self.sortIndex = sortIndex
         super.init (identifier: identifier, range: range, text: text, forceMoveMarkers: forceMoveMarkers, isAutoWhitespaceEdit: isAutoWhitespaceEdit, isTracked: isTracked)
     }
@@ -89,40 +89,41 @@ public enum EndOfLinePreference {
     case CRLF
 }
 
-public struct InternalModelContentChange {
-    var range: Range
+public struct InternalModelContentChange<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int, V.Element == UInt8 {
+    var range: Range<V>
     var rangeOffset: Int
     var rangeLength: Int
-    var text: [UInt8]
+    var text: V
     var forceMoveMarkers: Bool
 }
 
-public struct ApplyEditsResult {
-    public var reverseEdits: [IdentifiedSingleEditOperation]
-    public var changes: [InternalModelContentChange]
+public struct ApplyEditsResult<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int, V.Element == UInt8 {
+    public var reverseEdits: [IdentifiedSingleEditOperation<V>]
+    public var changes: [InternalModelContentChange<V>]
     public var trimAutoWhitespaceLineNumbers: [Int]?
 }
 
-public class PieceTreeTextBuffer {
-    var pieceTree: PieceTreeBase
-    public private(set) var bom: [UInt8]
+public class PieceTreeTextBuffer<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int, V.Element == UInt8 {
+    var pieceTree: PieceTreeBase<V>
+    public private(set) var bom: V
     public private(set) var mightContainRTL: Bool
     public private(set) var mightContainNonBasicASCII: Bool
-    public var eol: [UInt8] {
-        get { pieceTree.eol }
-        set {
-            if newValue == [10] || newValue == [10, 13] {
-                pieceTree.eol = newValue
-            }
-        }
-    }
 
-    init(chunks: inout [StringBuffer], BOM: [UInt8], eol: [UInt8], containsRTL: Bool, isBasicASCII: Bool, eolNormalized: Bool)
+    init(chunks: inout [StringBuffer<V>], BOM: V, eol: V, containsRTL: Bool, isBasicASCII: Bool, eolNormalized: Bool)
     {
         self.bom = BOM
         self.mightContainNonBasicASCII = !isBasicASCII
         self.mightContainRTL = containsRTL
         self.pieceTree = PieceTreeBase(chunks: &chunks, eol: eol, eolNormalized: eolNormalized)
+    }
+
+    public var eol: V {
+        get { pieceTree.eol }
+        set {
+            if newValue == V([10]) || newValue == V([10, 13]) {
+                pieceTree.eol = newValue
+            }
+        }
     }
 
     // #region TextBuffer
@@ -137,9 +138,9 @@ public class PieceTreeTextBuffer {
         return PieceTreeBase.equal (left: left.pieceTree, right: right.pieceTree)
     }
        
-    public func createSnapshot (preserveBOM: Bool) ->  PieceTreeSnapshot
+    public func createSnapshot (preserveBOM: Bool) -> PieceTreeSnapshot<V>
     {
-        return pieceTree.createSnapshot(bom: preserveBOM ? bom: [])
+        return pieceTree.createSnapshot(bom: preserveBOM ? bom: V())
     }
 
     public func getOffsetAt(lineNumber: Int, column: Int) ->  Int
@@ -157,7 +158,7 @@ public class PieceTreeTextBuffer {
         }
     }
     
-    public func insert (offset: Int, value: [UInt8]) {
+    public func insert (offset: Int, value: V) {
         pieceTree.insert(offset, value)
     }
     
@@ -166,7 +167,7 @@ public class PieceTreeTextBuffer {
         return pieceTree.getPositionAt(offset)
     }
 
-    public func getRangeAt(start: Int, length: Int) ->  Range
+    public func getRangeAt(start: Int, length: Int) -> Range<V>
     {
         let end = start + length
         let startPosition = getPositionAt(offset: start)
@@ -174,21 +175,21 @@ public class PieceTreeTextBuffer {
         return Range(startLineNumber: startPosition.line, startColumn: startPosition.column, endLineNumber: endPosition.line, endColumn: endPosition.column)
     }
 
-    public func getValueInRange(range: Range, eol: EndOfLinePreference = EndOfLinePreference.TextDefined) ->  [UInt8] {
+    public func getValueInRange(range: Range<V>, eol: EndOfLinePreference = EndOfLinePreference.TextDefined) ->  V {
     
         if range.isEmpty() {
-            return []
+            return V()
         }
         let lineEnding = _getEndOfLine(eol: eol)
         return pieceTree.getValueInRange(range: range, eol: lineEnding)
     }
     
-    public func getValueAt (index: Int) -> UInt8? {
+    public func getValueAt (index: Int) -> V.Element? {
         let b = getValueInRange(range: Range.from(start: index, end: index+1, on: self))
         return b.first
     }
 
-    public func getValueLengthInRange(range: Range, eol: EndOfLinePreference = EndOfLinePreference.TextDefined) ->  Int
+    public func getValueLengthInRange(range: Range<V>, eol: EndOfLinePreference = EndOfLinePreference.TextDefined) ->  Int
     {
         if range.isEmpty() {
             return 0
@@ -212,18 +213,18 @@ public class PieceTreeTextBuffer {
     }
 
     // Returns an array of lines, each line containing an array of bytes for the line, usually used as an UTF* buffer
-    public func getLinesContent() -> [[UInt8]] {
+    public func getLinesContent() -> [V] {
         return pieceTree.getLinesContent()
     }
 
     /// Returns the contents of the buffer as a byte array
-    public func getLinesRawContent() -> [UInt8] {
+    public func getLinesRawContent() -> V {
         return pieceTree.getLinesRawContent()
     }
     
     /// Returns the contents of the specified line as a byte array
     /// - Parameter lineNumber: the line to look up, starting at line 1
-    public func getLineContent(_ lineNumber: Int) ->  [UInt8] {
+    public func getLineContent(_ lineNumber: Int) -> V {
         return pieceTree.getLineContent(lineNumber)
     }
 
@@ -231,7 +232,7 @@ public class PieceTreeTextBuffer {
     /// - Parameter lineNumber: the line to look up, starting at line 1
     /// - Parameter index: 0-based index to the element to retrieve
     /// - Returns: The byte at the specified position
-    public func getLineCharCode(lineNumber: Int, index: Int) ->  UInt8 {
+    public func getLineCharCode(lineNumber: Int, index: Int) ->  V.Element {
         return pieceTree.getLineCharCode(lineNumber: lineNumber, index: index)
     }
 
@@ -250,7 +251,7 @@ public class PieceTreeTextBuffer {
         return getLineLength(lineNumber: lineNumber) + 1
     }
 
-    static func firstNonWhitespaceIndex (_ str: [UInt8]) -> Int
+    static func firstNonWhitespaceIndex (_ str: V) -> Int
     {
         let top = str.count
         var i = 0
@@ -272,7 +273,7 @@ public class PieceTreeTextBuffer {
         return result + 1
     }
     
-    static func lastNonWhitespaceIndex(_ str: [UInt8], startIndex: Int = -1) -> Int
+    static func lastNonWhitespaceIndex(_ str: V, startIndex: Int = -1) -> Int
     {
         for i in (0..<(startIndex == -1 ? str.count-1 : startIndex)).reversed() {
             let code = str [i]
@@ -291,24 +292,24 @@ public class PieceTreeTextBuffer {
         return result + 2
     }
 
-    func _getEndOfLine(eol: EndOfLinePreference) ->  [UInt8] {
+    func _getEndOfLine(eol: EndOfLinePreference) -> V {
         switch (eol) {
             case EndOfLinePreference.LF:
-                return [10]
+                return V([10])
             case EndOfLinePreference.CRLF:
-                return [13, 10]
+                return V([13, 10])
             case EndOfLinePreference.TextDefined:
                 return self.eol
         }
     }
 
-    static func containsRTL (_ str: [UInt8]) -> Bool
+    static func containsRTL (_ str: V) -> Bool
     {
         // TODO: needs to scan the string to determine if it contains RTL characters.
         return false
     }
     
-    static func isBasicASCII (_ str: [UInt8]) -> Bool
+    static func isBasicASCII (_ str: V) -> Bool
     {
         for a in str {
             if !(a == 9 /* TAB */ || a == 10 || a == 13 || (a >= 0x20 && a <= 0x7e)) {
@@ -324,13 +325,13 @@ public class PieceTreeTextBuffer {
         case overlappingRanges
     }
     
-    public func applyEdits(rawOperations: [IdentifiedSingleEditOperation], recordTrimAutoWhitespace: Bool) throws ->  ApplyEditsResult
+    public func applyEdits(rawOperations: [IdentifiedSingleEditOperation<V>], recordTrimAutoWhitespace: Bool) throws ->  ApplyEditsResult<V>
     {
         var mightContainRTL = self.mightContainRTL
         var mightContainNonBasicASCII = self.mightContainNonBasicASCII;
         var canReduceOperations = true
 
-        var operations: [ValidatedEditOperation] = []
+        var operations: [ValidatedEditOperation<V>] = []
         for i in 0..<rawOperations.count {
             let op = rawOperations[i]
             if (canReduceOperations && op.isTracked) {
@@ -346,13 +347,13 @@ public class PieceTreeTextBuffer {
                     mightContainNonBasicASCII = !Self.isBasicASCII(optext)
                 }
             }
-            operations[i] = ValidatedEditOperation(
+            operations[i] = ValidatedEditOperation<V>(
                 sortIndex: i,
                 identifier: op.identifier,
                 range: validatedRange,
                 rangeOffset:  getOffsetAt(lineNumber: validatedRange.startLineNumber, column: validatedRange.startColumn),
                 rangeLength: getValueLengthInRange(range: validatedRange),
-                lines: op.text != nil ? op.text!.split (separator: 10).map ({Array ($0)}) : nil,
+                lines: op.text != nil ? op.text!.split (separator: 10).map ({V ($0)}) : nil,
                 forceMoveMarkers: op.forceMoveMarkers,
                 isAutoWhitespaceEdit: op.isAutoWhitespaceEdit ?? false)
                 
@@ -387,7 +388,7 @@ public class PieceTreeTextBuffer {
 
         // Delta encode operations
         let reverseRanges = PieceTreeTextBuffer._getInverseEditRanges(operations)
-        var newTrimAutoWhitespaceCandidates: [(lineNumber: Int, oldContent: [UInt8])] = []
+        var newTrimAutoWhitespaceCandidates: [(lineNumber: Int, oldContent: V)] = []
 
         var i = 0
         while i < operations.count {
@@ -398,7 +399,7 @@ public class PieceTreeTextBuffer {
             if (recordTrimAutoWhitespace && op.isAutoWhitespaceEdit && op.range.isEmpty()) {
                 // Record already the future line Ints that might be auto whitespace removal candidates on next edit
                 for lineNumber in reverseRange.startLineNumber...reverseRange.endLineNumber {
-                    var currentLineContent : [UInt8] = []
+                    var currentLineContent : V = V()
                     if (lineNumber == reverseRange.startLineNumber) {
                         currentLineContent = getLineContent(op.range.startLineNumber)
                         if Self.firstNonWhitespaceIndex(currentLineContent) != -1 {
@@ -410,7 +411,7 @@ public class PieceTreeTextBuffer {
             }
         }
 
-        var reverseOperations: [ReverseSingleEditOperation] = []
+        var reverseOperations: [ReverseSingleEditOperation<V>] = []
         i = 0
         while i < operations.count {
             let op = operations[i]
@@ -471,7 +472,7 @@ public class PieceTreeTextBuffer {
      * Transform operations such that they represent the same logic edit,
      * but that they also do not cause OOM crashes.
      */
-    func _reduceOperations(operations: [ValidatedEditOperation]) ->  [ValidatedEditOperation] {
+    func _reduceOperations(operations: [ValidatedEditOperation<V>]) ->  [ValidatedEditOperation<V>] {
         if operations.count < 1000 {
             // We know from empirical testing that a thousand edits work fine regardless of their shape.
             return operations
@@ -485,15 +486,15 @@ public class PieceTreeTextBuffer {
         return [_toSingleEditOperation(operations)]
     }
 
-    func _toSingleEditOperation(_ operations: [ValidatedEditOperation]) -> ValidatedEditOperation
+    func _toSingleEditOperation(_ operations: [ValidatedEditOperation<V>]) -> ValidatedEditOperation<V>
     {
         var forceMoveMarkers = false
         let firstEditRange = operations[0].range
         let lastEditRange = operations[operations.count - 1].range
-        let entireEditRange = Range(startLineNumber: firstEditRange.startLineNumber, startColumn: firstEditRange.startColumn, endLineNumber: lastEditRange.endLineNumber, endColumn: lastEditRange.endColumn)
+        let entireEditRange = Range<V>(startLineNumber: firstEditRange.startLineNumber, startColumn: firstEditRange.startColumn, endLineNumber: lastEditRange.endLineNumber, endColumn: lastEditRange.endColumn)
         var lastendLineNumber = firstEditRange.startLineNumber
         var lastEndColumn = firstEditRange.startColumn
-        var result: [UInt8] = []
+        var result: V = V()
 
         for operation in operations {
             let range = operation.range
@@ -534,7 +535,7 @@ public class PieceTreeTextBuffer {
             lastEndColumn = operation.range.endColumn
         }
 
-        let llines = result.split(separator: 10, maxSplits: Int.max, omittingEmptySubsequences: false).map ({ Array ($0) })
+        let llines = result.split(separator: 10, maxSplits: Int.max, omittingEmptySubsequences: false).map ({ V ($0) })
         
         return ValidatedEditOperation (sortIndex: 0,
                                         identifier: operations [0].identifier,
@@ -546,7 +547,7 @@ public class PieceTreeTextBuffer {
                                         isAutoWhitespaceEdit: false)
     }
     
-    func _doApplyEdits(operations: inout [ValidatedEditOperation]) -> [InternalModelContentChange]
+    func _doApplyEdits(operations: inout [ValidatedEditOperation<V>]) -> [InternalModelContentChange<V>]
     {
         operations.sort(by: { a, b in
             let r = Range.compareUsingEnds(a.range, b.range)
@@ -556,7 +557,7 @@ public class PieceTreeTextBuffer {
             return r > 0
         })
 
-        var contentChanges: [InternalModelContentChange] = []
+        var contentChanges: [InternalModelContentChange<V>] = []
 
         // operations are from bottom to top
         for op in operations {
@@ -574,7 +575,7 @@ public class PieceTreeTextBuffer {
             let insertingLinesCnt = (op.lines != nil ? op.lines!.count - 1 : 0)
             let editingLinesCnt = min(deletingLinesCnt, insertingLinesCnt)
 
-            let text: [UInt8] = (op.lines != nil ? Array (op.lines!.joined(separator: eol)) : [])
+            let text: V = (op.lines != nil ? V (op.lines!.joined(separator: eol)) : V())
 
             if text.count > 0 {
                 // replacement
@@ -587,7 +588,7 @@ public class PieceTreeTextBuffer {
             }
 
             if (editingLinesCnt < insertingLinesCnt) {
-                var newLinesContent: [[UInt8]] = []
+                var newLinesContent: [V] = []
                 for j in (editingLinesCnt + 1)..<insertingLinesCnt {
                     newLinesContent.append (op.lines![j])
                 }
@@ -595,7 +596,7 @@ public class PieceTreeTextBuffer {
                 newLinesContent[newLinesContent.count - 1] = getLineContent(startLineNumber + insertingLinesCnt - 1)
             }
 
-            let contentChangeRange = Range(startLineNumber: startLineNumber, startColumn: startColumn, endLineNumber: endLineNumber, endColumn: endColumn)
+            let contentChangeRange = Range<V>(startLineNumber: startLineNumber, startColumn: startColumn, endLineNumber: endLineNumber, endColumn: endColumn)
             contentChanges.append(InternalModelContentChange(
                 range: contentChangeRange,
                 rangeOffset: op.rangeOffset,
@@ -616,7 +617,7 @@ public class PieceTreeTextBuffer {
 //
     // #region helper
     // testing purpose.
-    public func getPieceTree() ->  PieceTreeBase
+    public func getPieceTree() ->  PieceTreeBase<V>
     {
         return pieceTree
     }
@@ -624,11 +625,11 @@ public class PieceTreeTextBuffer {
     /**
      * Assumes `operations` are validated and sorted ascending
      */
-    public static func _getInverseEditRanges(_ operations: [ValidatedEditOperation]) ->  [Range] {
-        var result: [Range] = []
+    public static func _getInverseEditRanges(_ operations: [ValidatedEditOperation<V>]) ->  [Range<V>] {
+        var result: [Range<V>] = []
         var prevOpendLineNumber: Int = 0
         var prevOpEndColumn: Int = 0
-        var prevOpNil: ValidatedEditOperation? = nil
+        var prevOpNil: ValidatedEditOperation<V>? = nil
         for op in operations {
             var startLineNumber: Int
             var startColumn: Int
@@ -646,7 +647,7 @@ public class PieceTreeTextBuffer {
                 startColumn = op.range.startColumn
             }
 
-            var resultRange: Range
+            var resultRange: Range<V>
 
             if op.lines != nil && op.lines!.count > 0{
                 let oplines = op.lines!

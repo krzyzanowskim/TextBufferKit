@@ -8,7 +8,7 @@
 
 import Foundation
 
-public struct FindMatch {
-    public var range: Range
-    public var matches: [[UInt8]]?
+public struct FindMatch<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int, V.Element == UInt8 {
+    public var range: Range<V>
+    public var matches: [V]?
 }
