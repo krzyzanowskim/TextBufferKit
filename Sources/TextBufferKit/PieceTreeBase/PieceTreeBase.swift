@@ -3,7 +3,7 @@
 //  swift-textbuffer
 //
 //  Created by Miguel de Icaza on 8/10/19.
-//  Copyright 2019 Miguel de Icaza, Microsoft Corp
+//  Copyright 2019 Miguel de Icaza, Microsoft Corp, Marcin Krzyzanowski
 //  
 //  Permission is hereby granted, free of charge, to any person obtaining
 //  a copy of this software and associated documentation files (the
@@ -27,7 +27,7 @@
 
 import Foundation
 
-public struct PieceTreeSnapshot<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int {
+public struct PieceTreeSnapshot<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Index == Int {
     var pieces: [Piece]
     var index: Int
     var tree: PieceTreeBase<V>
@@ -74,7 +74,7 @@ public struct PieceTreeSnapshot<V: RangeReplaceableCollection & RandomAccessColl
 
 
 
-public class PieceTreeBase<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int {
+public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Index == Int {
     var root: TreeNode = TreeNode.SENTINEL
     var buffers = [StringBuffer<V> (buffer: V(), lineStarts: [])]
     public private(set) var lineCount: Int = 1
@@ -89,7 +89,7 @@ public class PieceTreeBase<V: RangeReplaceableCollection & RandomAccessCollectio
         }
     }
     
-    var _eol: V
+    var _eol: DefaultEndOfLine<V>
 
     var eolLength: Int = 1
     var eolNormalized: Bool = true
@@ -97,7 +97,7 @@ public class PieceTreeBase<V: RangeReplaceableCollection & RandomAccessCollectio
     var searchCache: PieceTreeSearchCache = PieceTreeSearchCache(limit: 1)
     var lastVisitedLine: (lineNumber: Int, value: V) = (0, V())
 
-    init(eol: V) {
+    init(eol: DefaultEndOfLine<V>) {
         _eol = eol
     }
 
@@ -175,18 +175,18 @@ public class PieceTreeBase<V: RangeReplaceableCollection & RandomAccessCollectio
     }
 }
 
-extension PieceTreeBase where V.Element == UInt8 {
+extension PieceTreeBase where V == [UInt8] {
 
     /// Initializes the PieceTreeBase
     /// - Parameter eol: must be a String either "\n" or "\r\n"
     ///
-    public convenience init (chunks: inout [StringBuffer<V>], eol: V = V([10]), eolNormalized: Bool)
+    public convenience init (chunks: inout [StringBuffer<V>], eol: DefaultEndOfLine<V> = .LF, eolNormalized: Bool)
     {
         self.init(eol: eol)
         create(chunks: &chunks, eol: eol, eolNormalized: eolNormalized)
     }
 
-    public var eol: V {
+    public var eol: DefaultEndOfLine<V> {
         get {
             return _eol
         }
@@ -196,13 +196,13 @@ extension PieceTreeBase where V.Element == UInt8 {
         }
     }
 
-    func create (chunks: inout [StringBuffer<V>], eol: V, eolNormalized: Bool)
+    func create (chunks: inout [StringBuffer<V>], eol: DefaultEndOfLine<V>, eolNormalized: Bool)
     {
         buffers = [StringBuffer<V>(buffer: V(), lineStarts: [0])]
         lineCount = 1
         length = 0
         self._eol = eol
-        eolLength = eol.count
+        self.eolLength = (eol.rawValue as V).count
         self.eolNormalized = eolNormalized
         
         var lastNode: TreeNode? = nil
@@ -239,13 +239,13 @@ extension PieceTreeBase where V.Element == UInt8 {
             let v = val [i]
             if v == 13 {
                 if i+1 < len && val [i+1] == 10 {
-                    result.append (contentsOf: eol)
+                    result.append (contentsOf: eol.rawValue)
                     i += 1
                 } else {
-                    result.append (contentsOf: eol)
+                    result.append (contentsOf: eol.rawValue)
                 }
             } else if v == 10 {
-                result.append (contentsOf: eol)
+                result.append (contentsOf: eol.rawValue)
             } else {
                 result.append (val [i])
             }
@@ -377,7 +377,7 @@ extension PieceTreeBase where V.Element == UInt8 {
                      }
                     
                     if (eol == self.eol && eolNormalized) {
-                         if (eol == V([13, 10])) {
+                         if (eol == .CRLF) {
                     
                          }
                          return value;
@@ -1360,7 +1360,7 @@ extension PieceTreeBase where V.Element == UInt8 {
     }
     
     func shouldCheckCRLF() -> Bool {
-        return !(eolNormalized && eol == V([10]));
+        return !(eolNormalized && eol == .LF);
     }
     
     func startWithLF(_ val: V) -> Bool

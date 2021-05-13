@@ -3,7 +3,7 @@
 //  swift-textbuffer
 //
 //  Created by Miguel de Icaza on 8/13/19.
-//  Copyright 2019 Miguel de Icaza, Microsoft Corp
+//  Copyright 2019 Miguel de Icaza, Microsoft Corp, Marcin Krzyzanowski
 //  
 //  Permission is hereby granted, free of charge, to any person obtaining
 //  a copy of this software and associated documentation files (the
@@ -29,7 +29,7 @@ import Foundation
 
 
 /// A range in the editor. (startLineNumber,startColumn) is <= (endLineNumber,endColumn)
-public struct Range<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int {
+public struct Range<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Index == Int {
     // negative if a < b
     // zero if a == b
     // positive if a > b
@@ -77,7 +77,7 @@ public struct Range<V: RangeReplaceableCollection & RandomAccessCollection & Has
     }
 }
 
-extension Range where V.Element == UInt8 {
+extension Range where V == [UInt8] {
     
     public static func from (start: Int, end: Int, on: PieceTreeTextBuffer<V>) -> Range
     {

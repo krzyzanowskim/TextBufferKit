@@ -3,7 +3,7 @@
 //  swift-textbuffer
 //
 //  Created by Miguel de Icaza on 8/15/19.
-//  Copyright 2019 Miguel de Icaza, Microsoft Corp
+//  Copyright 2019 Miguel de Icaza, Microsoft Corp, Marcin Krzyzanowski
 //  
 //  Permission is hereby granted, free of charge, to any person obtaining
 //  a copy of this software and associated documentation files (the
@@ -29,7 +29,7 @@ import Foundation
 
 let bomArray: [UInt8] = [0xeb, 0xbb, 0xbf]
 
-func startsWithUTF8BOM<V: RangeReplaceableCollection & RandomAccessCollection & Hashable>(_ str: V) -> Bool where V.Index == Int, V.Element == UInt8
+func startsWithUTF8BOM<V: RangeReplaceableCollection & BidirectionalCollection & Hashable>(_ str: V) -> Bool where V.Index == Int, V.Element == UInt8
 {
     // UTF8-BOM 0xEF,0xBB,0xBF
     guard str.count > 2 else {
@@ -49,18 +49,7 @@ func startsWithUTF8BOM<V: StringProtocol>(_ str: V) -> Bool
     return Array(str.utf8.prefix(bomArray.count)) == bomArray
 }
 
-public enum DefaultEndOfLine: String {
-    /**
-     * Use line feed (\n) as the end of line character.
-     */
-    case LF = "\n"
-    /**
-     * Use carriage return and line feed (\r\n) as the end of line character.
-     */
-    case CRLF = "\r\n"
-}
-
-public class PieceTreeTextBufferFactory<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int, V.Element == UInt8 {
+public class PieceTreeTextBufferFactory<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Index == Int {
     var chunks: [StringBuffer<V>]
     var bom: V
     var cr, lf, crlf: Int
@@ -85,27 +74,28 @@ extension PieceTreeTextBufferFactory where V == [UInt8] {
     //
     // returns an array of either '\r\n' | '\n'
     //
-    func getEOL(_ defaultEOL: DefaultEndOfLine) -> V {
+    func getEOL(_ defaultEOL: DefaultEndOfLine<V>) -> DefaultEndOfLine<V> {
         let totalEOLCount = cr + lf + crlf
         let totalCRCount = cr + crlf
         if (totalEOLCount == 0) {
             // This is an empty file or a file with precisely one line
-            return (defaultEOL == .LF ? [10] : [13, 10])
+            //return (defaultEOL == .LF ? [10] : [13, 10])
+            return defaultEOL
         }
         if (totalCRCount > totalEOLCount / 2) {
             // More than half of the file contains \r\n ending lines
-            return [13, 10];
+            return DefaultEndOfLine.CRLF
         }
         // At least one line more ends in \n
-        return [10]
+        return DefaultEndOfLine.LF
     }
 
-    public func createPieceTreeBase (_ defaultEOL: DefaultEndOfLine = .LF) -> PieceTreeBase<V>
+    public func createPieceTreeBase (_ defaultEOL: DefaultEndOfLine<V> = .LF) -> PieceTreeBase<V>
     {
         let eol = getEOL(defaultEOL)
         var chunks = self.chunks
 
-        if normalizeEol && ((eol == [13, 10] && (cr > 0 || lf > 0)) || (eol == [10] && (cr > 0 || crlf > 0))) {
+        if normalizeEol && ((eol == .CRLF && (cr > 0 || lf > 0)) || (eol == .LF && (cr > 0 || crlf > 0))) {
             // Normalize pieces
             for i in 0..<chunks.count {
                 // TODO
@@ -119,12 +109,12 @@ extension PieceTreeTextBufferFactory where V == [UInt8] {
         return PieceTreeBase(chunks: &chunks, eol: eol, eolNormalized: normalizeEol)
     }
 
-    public func create (_ defaultEOL: DefaultEndOfLine = .LF) -> PieceTreeTextBuffer<V>
+    public func create (_ defaultEOL: DefaultEndOfLine<V> = .LF) -> PieceTreeTextBuffer<V>
     {
         let eol = getEOL(defaultEOL)
         var chunks = self.chunks
 
-        if normalizeEol && ((eol == [13, 10] && (cr > 0 || lf > 0)) || (eol == [10] && (cr > 0 || crlf > 0))) {
+        if normalizeEol && ((eol == .CRLF && (cr > 0 || lf > 0)) || (eol == .LF && (cr > 0 || crlf > 0))) {
             // Normalize pieces
             for i in 0..<chunks.count {
                 // TODO
@@ -146,7 +136,7 @@ extension PieceTreeTextBufferFactory where V == [UInt8] {
     }
 }
 
-public class PieceTreeTextBufferBuilder<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int {
+public class PieceTreeTextBufferBuilder<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Index == Int {
     var chunks: [StringBuffer<V>] = []
     var bom: V = V()
     

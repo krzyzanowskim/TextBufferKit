@@ -26,7 +26,7 @@
 
 import Foundation
 
-public class IdentifiedSingleEditOperation<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int {
+public class IdentifiedSingleEditOperation<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Index == Int {
     /// An identifier associated with this single edit operation.
     public var identifier: SingleEditOperationIdentifier?
     /// The range to replace. This can be empty to emulate a simple insert.

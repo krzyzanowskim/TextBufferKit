@@ -3,7 +3,7 @@
 //  TextBufferKit
 //
 //  Created by Miguel de Icaza on 8/16/19.
-//  Copyright 2019 Miguel de Icaza, Microsoft Corp
+//  Copyright 2019-2021 Miguel de Icaza, Microsoft Corp, Marcin Krzyzanowski
 //  
 //  Permission is hereby granted, free of charge, to any person obtaining
 //  a copy of this software and associated documentation files (the
@@ -27,13 +27,13 @@
 // https://github.com/microsoft/vscode/blob/master/src/vs/editor/common/model/pieceTreeTextBuffer/pieceTreeTextBuffer.ts
 import Foundation
 
-public class PieceTreeTextBuffer<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int {
+public class PieceTreeTextBuffer<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Index == Int {
     private let pieceTree: PieceTreeBase<V>
     public private(set) var bom: V
     public private(set) var mightContainRTL: Bool
     public private(set) var mightContainNonBasicASCII: Bool
 
-    private init(BOM: V, eol: V, pieceTree: PieceTreeBase<V>, containsRTL: Bool, isBasicASCII: Bool, eolNormalized: Bool)
+    private init(BOM: V, pieceTree: PieceTreeBase<V>, containsRTL: Bool, isBasicASCII: Bool, eolNormalized: Bool)
     {
         self.bom = BOM
         self.mightContainNonBasicASCII = !isBasicASCII
@@ -42,18 +42,18 @@ public class PieceTreeTextBuffer<V: RangeReplaceableCollection & RandomAccessCol
     }
 }
 
-extension PieceTreeTextBuffer where V.Element == UInt8 {
+extension PieceTreeTextBuffer where V == [UInt8] {
 
-    convenience init(chunks: inout [StringBuffer<V>], BOM: V, eol: V, containsRTL: Bool, isBasicASCII: Bool, eolNormalized: Bool)
+    convenience init(chunks: inout [StringBuffer<V>], BOM: V, eol: DefaultEndOfLine<V>, containsRTL: Bool, isBasicASCII: Bool, eolNormalized: Bool)
     {
         let pieceTree = PieceTreeBase(chunks: &chunks, eol: eol, eolNormalized: eolNormalized)
-        self.init(BOM: BOM, eol: eol, pieceTree: pieceTree, containsRTL: containsRTL, isBasicASCII: isBasicASCII, eolNormalized: eolNormalized)
+        self.init(BOM: BOM, pieceTree: pieceTree, containsRTL: containsRTL, isBasicASCII: isBasicASCII, eolNormalized: eolNormalized)
     }
 
-    public var eol: V {
+    public var eol: DefaultEndOfLine<V> {
         get { pieceTree.eol }
         set {
-            if newValue == V([10]) || newValue == V([10, 13]) {
+            if newValue == .LF || newValue == .CRLF {
                 pieceTree.eol = newValue
             }
         }
@@ -228,11 +228,11 @@ extension PieceTreeTextBuffer where V.Element == UInt8 {
     func _getEndOfLine(eol: EndOfLinePreference) -> V {
         switch (eol) {
             case EndOfLinePreference.LF:
-                return V([10])
+                return DefaultEndOfLine.LF.rawValue
             case EndOfLinePreference.CRLF:
-                return V([13, 10])
+                return DefaultEndOfLine.CRLF.rawValue
             case EndOfLinePreference.TextDefined:
-                return self.eol
+                return self.eol.rawValue
         }
     }
 
@@ -508,7 +508,7 @@ extension PieceTreeTextBuffer where V.Element == UInt8 {
             let insertingLinesCnt = (op.lines != nil ? op.lines!.count - 1 : 0)
             let editingLinesCnt = min(deletingLinesCnt, insertingLinesCnt)
 
-            let text: V = (op.lines != nil ? V (op.lines!.joined(separator: eol)) : V())
+            let text: V = (op.lines != nil ? V (op.lines!.joined(separator: eol.rawValue)) : V())
 
             if text.count > 0 {
                 // replacement

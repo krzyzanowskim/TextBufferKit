@@ -29,7 +29,7 @@ import Foundation
 /**
  * Tracks the offset for each start of a line created from a byte array
  */
-struct LineStarts<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int, V.Element == UInt8 {
+struct LineStarts<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Index == Int, V.Element == UInt8 {
 
 
     /// Offsets for each line start
