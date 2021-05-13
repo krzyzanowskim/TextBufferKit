@@ -89,7 +89,7 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
         }
     }
     
-    var _eol: DefaultEndOfLine<V>
+    var _eol: EndOfLine<V>
 
     var eolLength: Int = 1
     var eolNormalized: Bool = true
@@ -97,7 +97,7 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
     var searchCache: PieceTreeSearchCache = PieceTreeSearchCache(limit: 1)
     var lastVisitedLine: (lineNumber: Int, value: V) = (0, V())
 
-    init(eol: DefaultEndOfLine<V>) {
+    init(eol: EndOfLine<V>) {
         _eol = eol
     }
 
@@ -180,13 +180,13 @@ extension PieceTreeBase where V == [UInt8] {
     /// Initializes the PieceTreeBase
     /// - Parameter eol: must be a String either "\n" or "\r\n"
     ///
-    public convenience init (chunks: inout [StringBuffer<V>], eol: DefaultEndOfLine<V> = .LF, eolNormalized: Bool)
+    public convenience init (chunks: inout [StringBuffer<V>], eol: EndOfLine<V> = .LF, eolNormalized: Bool)
     {
         self.init(eol: eol)
         create(chunks: &chunks, eol: eol, eolNormalized: eolNormalized)
     }
 
-    public var eol: DefaultEndOfLine<V> {
+    public var eol: EndOfLine<V> {
         get {
             return _eol
         }
@@ -196,7 +196,7 @@ extension PieceTreeBase where V == [UInt8] {
         }
     }
 
-    func create (chunks: inout [StringBuffer<V>], eol: DefaultEndOfLine<V>, eolNormalized: Bool)
+    func create (chunks: inout [StringBuffer<V>], eol: EndOfLine<V>, eolNormalized: Bool)
     {
         buffers = [StringBuffer<V>(buffer: V(), lineStarts: [0])]
         lineCount = 1

@@ -74,7 +74,7 @@ extension PieceTreeTextBufferFactory where V == [UInt8] {
     //
     // returns an array of either '\r\n' | '\n'
     //
-    func getEOL(_ defaultEOL: DefaultEndOfLine<V>) -> DefaultEndOfLine<V> {
+    func getEOL(_ defaultEOL: EndOfLine<V>) -> EndOfLine<V> {
         let totalEOLCount = cr + lf + crlf
         let totalCRCount = cr + crlf
         if (totalEOLCount == 0) {
@@ -84,13 +84,13 @@ extension PieceTreeTextBufferFactory where V == [UInt8] {
         }
         if (totalCRCount > totalEOLCount / 2) {
             // More than half of the file contains \r\n ending lines
-            return DefaultEndOfLine.CRLF
+            return EndOfLine.CRLF
         }
         // At least one line more ends in \n
-        return DefaultEndOfLine.LF
+        return EndOfLine.LF
     }
 
-    public func createPieceTreeBase (_ defaultEOL: DefaultEndOfLine<V> = .LF) -> PieceTreeBase<V>
+    public func createPieceTreeBase (_ defaultEOL: EndOfLine<V> = .LF) -> PieceTreeBase<V>
     {
         let eol = getEOL(defaultEOL)
         var chunks = self.chunks
@@ -109,7 +109,7 @@ extension PieceTreeTextBufferFactory where V == [UInt8] {
         return PieceTreeBase(chunks: &chunks, eol: eol, eolNormalized: normalizeEol)
     }
 
-    public func create (_ defaultEOL: DefaultEndOfLine<V> = .LF) -> PieceTreeTextBuffer<V>
+    public func create (_ defaultEOL: EndOfLine<V> = .LF) -> PieceTreeTextBuffer<V>
     {
         let eol = getEOL(defaultEOL)
         var chunks = self.chunks

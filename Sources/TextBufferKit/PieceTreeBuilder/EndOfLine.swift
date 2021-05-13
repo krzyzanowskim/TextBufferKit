@@ -26,7 +26,7 @@
 
 import Foundation
 
-public enum DefaultEndOfLine<V: RangeReplaceableCollection & BidirectionalCollection & Hashable>: String {
+public enum EndOfLine<V: RangeReplaceableCollection & BidirectionalCollection & Hashable>: String {
     /**
      * Use line feed (\n) as the end of line character.
      */
@@ -43,12 +43,12 @@ public enum DefaultEndOfLine<V: RangeReplaceableCollection & BidirectionalCollec
     }
 }
 
-extension DefaultEndOfLine where V == [UInt8] {
+extension EndOfLine where V == [UInt8] {
     public init?(rawValue: [UInt8]) {
         switch String(decoding: rawValue, as: UTF8.self) {
-        case DefaultEndOfLine.CRLF.stringValue:
+        case EndOfLine.CRLF.stringValue:
             self = .CRLF
-        case DefaultEndOfLine.LF.stringValue:
+        case EndOfLine.LF.stringValue:
             self = .LF
         default:
             return nil
@@ -65,12 +65,12 @@ extension DefaultEndOfLine where V == [UInt8] {
     }
 }
 
-extension DefaultEndOfLine where V == String {
+extension EndOfLine where V == String {
     public init?(rawValue: String) {
         switch rawValue {
-        case DefaultEndOfLine.CRLF.stringValue:
+        case EndOfLine.CRLF.stringValue:
             self = .CRLF
-        case DefaultEndOfLine.LF.stringValue:
+        case EndOfLine.LF.stringValue:
             self = .LF
         default:
             return nil

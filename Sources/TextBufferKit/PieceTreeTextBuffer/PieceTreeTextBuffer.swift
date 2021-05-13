@@ -44,13 +44,13 @@ public class PieceTreeTextBuffer<V: RangeReplaceableCollection & BidirectionalCo
 
 extension PieceTreeTextBuffer where V == [UInt8] {
 
-    convenience init(chunks: inout [StringBuffer<V>], BOM: V, eol: DefaultEndOfLine<V>, containsRTL: Bool, isBasicASCII: Bool, eolNormalized: Bool)
+    convenience init(chunks: inout [StringBuffer<V>], BOM: V, eol: EndOfLine<V>, containsRTL: Bool, isBasicASCII: Bool, eolNormalized: Bool)
     {
         let pieceTree = PieceTreeBase(chunks: &chunks, eol: eol, eolNormalized: eolNormalized)
         self.init(BOM: BOM, pieceTree: pieceTree, containsRTL: containsRTL, isBasicASCII: isBasicASCII, eolNormalized: eolNormalized)
     }
 
-    public var eol: DefaultEndOfLine<V> {
+    public var eol: EndOfLine<V> {
         get { pieceTree.eol }
         set {
             if newValue == .LF || newValue == .CRLF {
@@ -228,9 +228,9 @@ extension PieceTreeTextBuffer where V == [UInt8] {
     func _getEndOfLine(eol: EndOfLinePreference) -> V {
         switch (eol) {
             case EndOfLinePreference.LF:
-                return DefaultEndOfLine.LF.rawValue
+                return EndOfLine.LF.rawValue
             case EndOfLinePreference.CRLF:
-                return DefaultEndOfLine.CRLF.rawValue
+                return EndOfLine.CRLF.rawValue
             case EndOfLinePreference.TextDefined:
                 return self.eol.rawValue
         }

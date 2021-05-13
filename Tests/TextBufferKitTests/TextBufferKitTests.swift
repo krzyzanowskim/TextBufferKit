@@ -52,7 +52,7 @@ class TextBufferKitTests: XCTestCase {
         builder.acceptChunk("abc\n")
         builder.acceptChunk("def")
         let factory = builder.finish(normalizeEol: true)
-        let pieceTree = factory.create(DefaultEndOfLine.LF).getPieceTree()
+        let pieceTree = factory.create(EndOfLine.LF).getPieceTree()
 
         XCTAssertEqual(pieceTree.lineCount, 2)
         XCTAssertEqual(pieceTree.getLineContent (1), toBytes ("abc"))
