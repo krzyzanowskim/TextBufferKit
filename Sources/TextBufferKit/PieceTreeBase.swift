@@ -167,7 +167,7 @@ struct BufferCursor {
     var column: Int
 }
 
-public struct StringBuffer<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int, V.Element == UInt8 {
+public struct StringBuffer<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int {
     var buffer: V
     var lineStarts: [Int]
 }
@@ -329,6 +329,9 @@ public class PieceTreeBase<V: RangeReplaceableCollection & RandomAccessCollectio
     {
         create(chunks: &chunks, eol: eol, eolNormalized: eolNormalized)
     }
+}
+
+extension PieceTreeBase where V.Element == UInt8 {
 
     func create (chunks: inout [StringBuffer<V>], eol: V, eolNormalized: Bool)
     {

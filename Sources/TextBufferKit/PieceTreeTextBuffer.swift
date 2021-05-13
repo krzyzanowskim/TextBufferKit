@@ -40,6 +40,9 @@ public class PieceTreeTextBuffer<V: RangeReplaceableCollection & RandomAccessCol
         self.mightContainRTL = containsRTL
         self.pieceTree = PieceTreeBase(chunks: &chunks, eol: eol, eolNormalized: eolNormalized)
     }
+}
+
+extension PieceTreeTextBuffer where V.Element == UInt8 {
 
     public var eol: V {
         get { pieceTree.eol }
