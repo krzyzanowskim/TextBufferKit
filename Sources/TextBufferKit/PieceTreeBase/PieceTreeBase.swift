@@ -27,7 +27,7 @@
 
 import Foundation
 
-public struct PieceTreeSnapshot<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int, V.Element == UInt8 {
+public struct PieceTreeSnapshot<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int {
     var pieces: [Piece]
     var index: Int
     var tree: PieceTreeBase<V>
@@ -74,7 +74,7 @@ public struct PieceTreeSnapshot<V: RangeReplaceableCollection & RandomAccessColl
 
 
 
-public class PieceTreeBase<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int, V.Element == UInt8 {
+public class PieceTreeBase<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int {
     var root: TreeNode = TreeNode.SENTINEL
     var buffers = [StringBuffer<V> (buffer: V(), lineStarts: [])]
     public private(set) var lineCount: Int = 1
@@ -89,7 +89,66 @@ public class PieceTreeBase<V: RangeReplaceableCollection & RandomAccessCollectio
         }
     }
     
-    var _eol: V = V([10])
+    var _eol: V
+
+    var eolLength: Int = 1
+    var eolNormalized: Bool = true
+    var lastChangeBufferPos: BufferCursor = BufferCursor(line: 0, column: 0)
+    var searchCache: PieceTreeSearchCache = PieceTreeSearchCache(limit: 1)
+    var lastVisitedLine: (lineNumber: Int, value: V) = (0, V())
+
+    private init(eol: V) {
+        _eol = eol
+    }
+
+    @discardableResult
+    func iterate(node: TreeNode, callback: (_ node: TreeNode) -> Bool) -> Bool {
+        if node === TreeNode.SENTINEL {
+            return callback(TreeNode.SENTINEL);
+        }
+
+        let leftRet = iterate(node: node.left!, callback: callback);
+        if !leftRet {
+            return leftRet;
+        }
+
+        return callback(node) && iterate(node: node.right!, callback: callback);
+    }
+
+    func getPieceContent(piece: Piece) -> V {
+
+        let buffer = buffers[piece.bufferIndex]
+        let startOffset = offsetInBuffer(piece.bufferIndex, piece.start)
+        let endOffset = offsetInBuffer(piece.bufferIndex, piece.end)
+        let currentContent = buffer.buffer [startOffset..<endOffset]
+        return V (currentContent)
+    }
+
+    func offsetInBuffer(_ bufferIndex: Int, _ cursor: BufferCursor) -> Int
+    {
+        let lineStarts = buffers[bufferIndex].lineStarts
+        return lineStarts[cursor.line] + cursor.column
+    }
+
+    func deleteNodes(_ nodes: [TreeNode])
+    {
+        for node in nodes {
+            rbDelete (self, node)
+        }
+    }
+}
+
+extension PieceTreeBase where V.Element == UInt8 {
+
+    /// Initializes the PieceTreeBase
+    /// - Parameter eol: must be a String either "\n" or "\r\n"
+    ///
+    public convenience init (chunks: inout [StringBuffer<V>], eol: V = V([10]), eolNormalized: Bool)
+    {
+        self.init(eol: eol)
+        create(chunks: &chunks, eol: eol, eolNormalized: eolNormalized)
+    }
+
     public var eol: V {
         get {
             return _eol
@@ -99,22 +158,6 @@ public class PieceTreeBase<V: RangeReplaceableCollection & RandomAccessCollectio
             normalizeEol()
         }
     }
-    var eolLength: Int = 1
-    var eolNormalized: Bool = true
-    var lastChangeBufferPos: BufferCursor = BufferCursor(line: 0, column: 0)
-    var searchCache: PieceTreeSearchCache = PieceTreeSearchCache(limit: 1)
-    var lastVisitedLine: (lineNumber: Int, value: V) = (0, V())
-    
-    /// Initializes the PieceTreeBase
-    /// - Parameter eol: must be a String either "\n" or "\r\n"
-    ///
-    public init (chunks: inout [StringBuffer<V>], eol: V, eolNormalized: Bool)
-    {
-        create(chunks: &chunks, eol: eol, eolNormalized: eolNormalized)
-    }
-}
-
-extension PieceTreeBase where V.Element == UInt8 {
 
     func create (chunks: inout [StringBuffer<V>], eol: V, eolNormalized: Bool)
     {
@@ -917,19 +960,6 @@ extension PieceTreeBase where V.Element == UInt8 {
         }
     }
     
-    func offsetInBuffer(_ bufferIndex: Int, _ cursor: BufferCursor) -> Int
-    {
-        let lineStarts = buffers[bufferIndex].lineStarts
-        return lineStarts[cursor.line] + cursor.column
-    }
-    
-    func deleteNodes(_ nodes: [TreeNode])
-    {
-        for node in nodes {
-            rbDelete (self, node)
-        }
-    }
-    
     func createNewPieces(_ _text: V) -> [Piece]
     {
         var text = _text[0..<_text.count]
@@ -1460,20 +1490,6 @@ extension PieceTreeBase where V.Element == UInt8 {
         return false
     }
     
-    @discardableResult
-    func iterate(node: TreeNode, callback: (_ node: TreeNode) -> Bool) -> Bool {
-        if node === TreeNode.SENTINEL {
-            return callback(TreeNode.SENTINEL);
-        }
-
-        let leftRet = iterate(node: node.left!, callback: callback);
-        if !leftRet {
-            return leftRet;
-        }
-
-        return callback(node) && iterate(node: node.right!, callback: callback);
-    }
-    
     func getNodeContent(_ node: TreeNode) -> V
     {
         if node === TreeNode.SENTINEL {
@@ -1485,15 +1501,7 @@ extension PieceTreeBase where V.Element == UInt8 {
         let endOffset = offsetInBuffer(piece.bufferIndex, piece.end)
         return V (buffer.buffer [startOffset..<endOffset])
     }
-    
-    func getPieceContent(piece: Piece) -> V {
-        
-        let buffer = buffers[piece.bufferIndex]
-        let startOffset = offsetInBuffer(piece.bufferIndex, piece.start)
-        let endOffset = offsetInBuffer(piece.bufferIndex, piece.end)
-        let currentContent = buffer.buffer [startOffset..<endOffset]
-        return V (currentContent)
-    }
+
     
     /**
      *      node              node
