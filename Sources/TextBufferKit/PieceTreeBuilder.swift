@@ -133,23 +133,28 @@ extension PieceTreeTextBufferFactory where V == [UInt8] {
     }
 }
 
-public class PieceTreeTextBufferBuilder<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int, V.Element == UInt8 {
+public class PieceTreeTextBufferBuilder<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int {
     var chunks: [StringBuffer<V>] = []
     var bom: V = V()
     
     var hasPreviousChar: Bool = false
-    var previousChar: V.Element = 0
+    var previousChar: V.Element
 
     var cr: Int = 0
     var lf: Int = 0
     var crlf: Int = 0
 
-    public init ()
+    private init (previousChar: V.Element)
     {
+        self.previousChar = previousChar
     }
 }
 
 extension PieceTreeTextBufferBuilder where V == [UInt8] {
+
+    public convenience init() {
+        self.init(previousChar: 0)
+    }
 
     public func acceptChunk (_ str: String, encoding: String.Encoding = .utf8)
     {
