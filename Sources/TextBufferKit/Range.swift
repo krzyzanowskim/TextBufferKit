@@ -29,7 +29,7 @@ import Foundation
 
 
 /// A range in the editor. (startLineNumber,startColumn) is <= (endLineNumber,endColumn)
-public struct Range<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int, V.Element == UInt8 {
+public struct Range<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int {
     // negative if a < b
     // zero if a == b
     // positive if a > b
@@ -52,12 +52,6 @@ public struct Range<V: RangeReplaceableCollection & RandomAccessCollection & Has
         return Range(startLineNumber: startLine, startColumn: startColumn, endLineNumber: endLine, endColumn: endColumn)
     }
     
-    public static func from (start: Int, end: Int, on: PieceTreeTextBuffer<V>) -> Range
-    {
-        let sp = on.getPositionAt(offset: start)
-        let ep = on.getPositionAt(offset: end)
-        return Range (startLineNumber: sp.line, startColumn: sp.column, endLineNumber: ep.line, endColumn: ep.column)
-    }
     /// Line number on which the range starts (starts at 1).
     public var startLineNumber: Int
     /// Column on which the range starts in line `startLineNumber` (starts at 1).
@@ -81,4 +75,15 @@ public struct Range<V: RangeReplaceableCollection & RandomAccessCollection & Has
     {
         return Position(line: startLineNumber, column: startColumn)
     }
+}
+
+extension Range where V.Element == UInt8 {
+    
+    public static func from (start: Int, end: Int, on: PieceTreeTextBuffer<V>) -> Range
+    {
+        let sp = on.getPositionAt(offset: start)
+        let ep = on.getPositionAt(offset: end)
+        return Range (startLineNumber: sp.line, startColumn: sp.column, endLineNumber: ep.line, endColumn: ep.column)
+    }
+
 }
