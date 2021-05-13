@@ -21,7 +21,7 @@
 		E3A891FB2326F736001FA258 /* Range.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A891F32326F736001FA258 /* Range.swift */; };
 		E3A891FC2326F736001FA258 /* PieceTreeTextBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A891F42326F736001FA258 /* PieceTreeTextBuffer.swift */; };
 		E3A891FD2326F736001FA258 /* Position.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A891F52326F736001FA258 /* Position.swift */; };
-		E3A891FE2326F736001FA258 /* TreeBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A891F62326F736001FA258 /* TreeBase.swift */; };
+		E3A891FE2326F736001FA258 /* TreeNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A891F62326F736001FA258 /* TreeNode.swift */; };
 		E3A891FF2326F736001FA258 /* PieceTreeBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A891F72326F736001FA258 /* PieceTreeBuilder.swift */; };
 		E3A892032326F742001FA258 /* TextBufferKitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A892012326F742001FA258 /* TextBufferKitTests.swift */; };
 		E3A892042326F742001FA258 /* PieceTreeTextBufferTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A892022326F742001FA258 /* PieceTreeTextBufferTests.swift */; };
@@ -58,7 +58,7 @@
 		E3A891F32326F736001FA258 /* Range.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Range.swift; sourceTree = "<group>"; };
 		E3A891F42326F736001FA258 /* PieceTreeTextBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PieceTreeTextBuffer.swift; sourceTree = "<group>"; };
 		E3A891F52326F736001FA258 /* Position.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Position.swift; sourceTree = "<group>"; };
-		E3A891F62326F736001FA258 /* TreeBase.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TreeBase.swift; sourceTree = "<group>"; };
+		E3A891F62326F736001FA258 /* TreeNode.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TreeNode.swift; sourceTree = "<group>"; };
 		E3A891F72326F736001FA258 /* PieceTreeBuilder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PieceTreeBuilder.swift; sourceTree = "<group>"; };
 		E3A892012326F742001FA258 /* TextBufferKitTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TextBufferKitTests.swift; sourceTree = "<group>"; };
 		E3A892022326F742001FA258 /* PieceTreeTextBufferTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PieceTreeTextBufferTests.swift; sourceTree = "<group>"; };
@@ -148,7 +148,7 @@
 				E3A891F32326F736001FA258 /* Range.swift */,
 				E3A891F42326F736001FA258 /* PieceTreeTextBuffer.swift */,
 				E3A891F52326F736001FA258 /* Position.swift */,
-				E3A891F62326F736001FA258 /* TreeBase.swift */,
+				E3A891F62326F736001FA258 /* TreeNode.swift */,
 				E3A891F72326F736001FA258 /* PieceTreeBuilder.swift */,
 				757A3445264DBA2000E9EAA3 /* InternalModelContentChange.swift */,
 				757A3447264DBAA900E9EAA3 /* ApplyEditsResult.swift */,
@@ -290,7 +290,7 @@
 				E3A891FD2326F736001FA258 /* Position.swift in Sources */,
 				E3A891FA2326F736001FA258 /* SearchData.swift in Sources */,
 				757A344A264DBACA00E9EAA3 /* EndOfLinePreference.swift in Sources */,
-				E3A891FE2326F736001FA258 /* TreeBase.swift in Sources */,
+				E3A891FE2326F736001FA258 /* TreeNode.swift in Sources */,
 				E3A891F92326F736001FA258 /* PieceTreeBase.swift in Sources */,
 				757A344C264DBAE700E9EAA3 /* ValidatedEditOperation.swift in Sources */,
 				E3A891FF2326F736001FA258 /* PieceTreeBuilder.swift in Sources */,
