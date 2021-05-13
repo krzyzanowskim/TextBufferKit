@@ -26,7 +26,7 @@
 
 import Foundation
 
-public struct InternalModelContentChange<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int, V.Element == UInt8 {
+public struct InternalModelContentChange<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int {
     var range: Range<V>
     var rangeOffset: Int
     var rangeLength: Int
