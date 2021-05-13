@@ -30,7 +30,9 @@ import Foundation
 /**
  * Tracks the offset for each start of a line created from a byte array
  */
-struct LineStarts {
+struct LineStarts<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int, V.Element == UInt8 {
+
+
     /// Offsets for each line start
     public var lineStarts: [Int]
     /// Number of carriage returns found
@@ -47,7 +49,7 @@ struct LineStarts {
      * beginning of each line -- where lines are considered those immediately after a
      * \r\n or a \n
      */
-    public static func createLineStartsArray (_ data: [UInt8]) -> [Int]
+    public static func createLineStartsArray (_ data: V) -> [Int]
     {
         var result: [Int] = [0]
         
@@ -75,7 +77,7 @@ struct LineStarts {
     /**
      * Creates a LineStarts structure from the given byte array
      */
-    public init (data: [UInt8])
+    public init (data: V)
     {
         var result: [Int] = [0]
         var cr = 0
@@ -165,8 +167,8 @@ struct BufferCursor {
     var column: Int
 }
 
-public struct StringBuffer {
-    var buffer: [UInt8]
+public struct StringBuffer<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int, V.Element == UInt8 {
+    var buffer: V
     var lineStarts: [Int]
 }
 
@@ -178,13 +180,13 @@ public struct Piece {
     var lineFeedCount: Int
 }
 
-public struct PieceTreeSnapshot {
+public struct PieceTreeSnapshot<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int, V.Element == UInt8 {
     var pieces: [Piece]
     var index: Int
-    var tree: PieceTreeBase
-    var bom: [UInt8]
+    var tree: PieceTreeBase<V>
+    var bom: V
     
-    public init (tree: PieceTreeBase, bom: [UInt8])
+    public init (tree: PieceTreeBase<V>, bom: V)
     {
         pieces = []
         self.tree = tree
@@ -200,7 +202,7 @@ public struct PieceTreeSnapshot {
         }
     }
     
-    public mutating func read() -> [UInt8]?  {
+    public mutating func read() -> V?  {
         if pieces.count == 0 {
             if index == 0 {
                 index += 1
@@ -289,9 +291,9 @@ class PieceTreeSearchCache {
     }
 }
 
-public class PieceTreeBase {
+public class PieceTreeBase<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int, V.Element == UInt8 {
     var root: TreeNode = TreeNode.SENTINEL
-    var buffers: [StringBuffer] = [StringBuffer (buffer: [], lineStarts: [])]
+    var buffers = [StringBuffer<V> (buffer: V(), lineStarts: [])]
     public private(set) var lineCount: Int = 1
     public private(set) var length: Int = 0
     
@@ -304,8 +306,8 @@ public class PieceTreeBase {
         }
     }
     
-    var _eol: [UInt8] = [10]
-    public var eol: [UInt8] {
+    var _eol: V = V([10])
+    public var eol: V {
         get {
             return _eol
         }
@@ -318,19 +320,19 @@ public class PieceTreeBase {
     var eolNormalized: Bool = true
     var lastChangeBufferPos: BufferCursor = BufferCursor(line: 0, column: 0)
     var searchCache: PieceTreeSearchCache = PieceTreeSearchCache(limit: 1)
-    var lastVisitedLine: (lineNumber: Int, value: [UInt8]) = (0, [])
+    var lastVisitedLine: (lineNumber: Int, value: V) = (0, V())
     
     /// Initializes the PieceTreeBase
     /// - Parameter eol: must be a String either "\n" or "\r\n"
     ///
-    public init (chunks: inout [StringBuffer], eol: [UInt8], eolNormalized: Bool)
+    public init (chunks: inout [StringBuffer<V>], eol: V, eolNormalized: Bool)
     {
         create(chunks: &chunks, eol: eol, eolNormalized: eolNormalized)
     }
 
-    func create (chunks: inout [StringBuffer], eol: [UInt8], eolNormalized: Bool)
+    func create (chunks: inout [StringBuffer<V>], eol: V, eolNormalized: Bool)
     {
-        buffers = [StringBuffer(buffer: [], lineStarts: [0])]
+        buffers = [StringBuffer<V>(buffer: V(), lineStarts: [0])]
         lineCount = 1
         length = 0
         self._eol = eol
@@ -357,14 +359,14 @@ public class PieceTreeBase {
             i += 1
         }
         searchCache = PieceTreeSearchCache(limit: 1)
-        lastVisitedLine = (0, [])
+        lastVisitedLine = (0, V())
         computeBufferMetadata()
     }
     
     // Replaces \r\n, \r and \n with the value of eol
-    func replaceNewLines (_ val: [UInt8]) -> [UInt8]
+    func replaceNewLines (_ val: V) -> V
     {
-        var result: [UInt8] = []
+        var result = V()
         let len = val.count
         var i = 0
         while i < len {
@@ -392,9 +394,9 @@ public class PieceTreeBase {
         let min = Int (Float (averageBufferSize) - floor(Float (averageBufferSize / 3)))
         let max = min * 2
 
-        var tempChunk: [UInt8] = []
+        var tempChunk: V = V()
         var tempChunkLen = 0
-        var chunks: [StringBuffer] = []
+        var chunks: [StringBuffer<V>] = [StringBuffer<V>]()
 
         iterate(node: root, callback: { node in
             let str = getNodeContent(node)
@@ -415,13 +417,13 @@ public class PieceTreeBase {
 
         if (tempChunkLen > 0) {
             let text = replaceNewLines (tempChunk)
-            chunks.append (StringBuffer(buffer: text, lineStarts: LineStarts.createLineStartsArray(text)))
+            chunks.append (StringBuffer(buffer: text, lineStarts: LineStarts<V>.createLineStartsArray(text)))
         }
 
         create(chunks: &chunks, eol: eol, eolNormalized: true)
     }
     
-    public func createSnapshot(bom: [UInt8]) -> PieceTreeSnapshot {
+    public func createSnapshot(bom: V) -> PieceTreeSnapshot<V> {
         return PieceTreeSnapshot(tree: self, bom: bom);
     }
     
@@ -516,9 +518,9 @@ public class PieceTreeBase {
         return Position(line: 1, column: 1)
     }
 
-    public func getValueInRange(range: Range, eol _eol: [UInt8]? = nil) -> [UInt8] {
+    public func getValueInRange(range: Range<V>, eol _eol: V? = nil) -> V {
         if range.startLineNumber == range.endLineNumber && range.startColumn == range.endColumn {
-            return []
+            return V()
         }
 
         if let startPosition = nodeAt2(line: range.startLineNumber, col: range.startColumn) {
@@ -532,7 +534,7 @@ public class PieceTreeBase {
                      }
                     
                     if (eol == self.eol && eolNormalized) {
-                         if (eol == [13, 10]) {
+                         if (eol == V([13, 10])) {
                     
                          }
                          return value;
@@ -542,21 +544,21 @@ public class PieceTreeBase {
                 return value
             }
         }
-        return []
+        return V()
     }
 
-    func getValueInRange2(_ startPosition: NodePosition, _ endPosition: NodePosition) -> [UInt8] {
+    func getValueInRange2(_ startPosition: NodePosition, _ endPosition: NodePosition) -> V {
         if startPosition.node === endPosition.node {
             let node = startPosition.node
             let buffer = buffers[node.piece.bufferIndex].buffer
             let startOffset = offsetInBuffer(node.piece.bufferIndex, node.piece.start)
-            return Array (buffer [(startOffset + startPosition.remainder)..<(startOffset + endPosition.remainder)])
+            return V (buffer [(startOffset + startPosition.remainder)..<(startOffset + endPosition.remainder)])
         }
 
         var x = startPosition.node
         var buffer = buffers[x.piece.bufferIndex].buffer
         let startOffset = offsetInBuffer(x.piece.bufferIndex, x.piece.start)
-        var ret = Array (buffer [(startOffset + startPosition.remainder)..<(startOffset + x.piece.length)])
+        var ret = V (buffer [(startOffset + startPosition.remainder)..<(startOffset + x.piece.length)])
 
         x = x.next()
         while x !== TreeNode.SENTINEL {
@@ -578,11 +580,11 @@ public class PieceTreeBase {
     
     /// Splits a buffer containing the whole text in lines,
     /// where lines are those with \r\n, \r or \n
-    public static func splitBufferInLines (_ contents: [UInt8]) -> [[UInt8]]
+    public static func splitBufferInLines (_ contents: V) -> [V]
     {
-        var result: [[UInt8]] = []
+        var result: [V] = [V()]
         var i = 0
-        var line: [UInt8] = []
+        var line: V = V()
         
         let top = contents.count
         while i < top {
@@ -592,10 +594,10 @@ public class PieceTreeBase {
                     i += 1
                 }
                 result.append (line)
-                line = []
+                line = V()
             } else if c == 10 {
                 result.append (line)
-                line = []
+                line = V()
             } else {
                 line.append (c)
             }
@@ -607,13 +609,13 @@ public class PieceTreeBase {
         return result
     }
     
-    public func getLinesContent() -> [[UInt8]]
+    public func getLinesContent() -> [V]
     {
         return Self.splitBufferInLines (getContentOfSubTree(node: root))
     }
     
     
-    public func getLineContent(_ lineNumber: Int) -> [UInt8] {
+    public func getLineContent(_ lineNumber: Int) -> V {
         if lastVisitedLine.lineNumber == lineNumber {
             return lastVisitedLine.value
         }
@@ -642,7 +644,7 @@ public class PieceTreeBase {
         return lastVisitedLine.value
     }
     
-    public func getLineCharCode(lineNumber: Int, index: Int) -> UInt8
+    public func getLineCharCode(lineNumber: Int, index: Int) -> V.Element
     {
         guard let nodePos = nodeAt2(line: lineNumber, col: index + 1) else {
             return 0
@@ -823,15 +825,15 @@ public class PieceTreeBase {
 //
     func insert(_ offset: Int, _ value: String, eolNormalized: Bool = false)
     {
-        insert (offset, [UInt8](value.utf8))
+        insert (offset, V(value.utf8))
     }
     
-    func insert(_ offset: Int, _ _value: [UInt8], eolNormalized: Bool = false)
+    func insert(_ offset: Int, _ _value: V, eolNormalized: Bool = false)
     {
         var value = _value
         self.eolNormalized = self.eolNormalized && eolNormalized;
         lastVisitedLine.lineNumber = 0
-        lastVisitedLine.value = [];
+        lastVisitedLine.value = V()
 
         if root !== TreeNode.SENTINEL {
             let nodePosition = nodeAt (offset)!
@@ -932,7 +934,7 @@ public class PieceTreeBase {
     func delete(offset: Int, cnt: Int)
     {
         lastVisitedLine.lineNumber = 0
-        lastVisitedLine.value = []
+        lastVisitedLine.value = V()
 
         if cnt <= 0 || root === TreeNode.SENTINEL {
             return
@@ -1009,7 +1011,7 @@ public class PieceTreeBase {
         computeBufferMetadata()
     }
     
-    func insertContentToNodeLeft(value: inout [UInt8], node: inout TreeNode)
+    func insertContentToNodeLeft(value: inout V, node: inout TreeNode)
     {
         // we are inserting content to the beginning of node
         var nodesToDel: [TreeNode] = []
@@ -1041,7 +1043,7 @@ public class PieceTreeBase {
         deleteNodes(nodesToDel)
     }
     
-    func insertContentToNodeRight(value: inout [UInt8], node: TreeNode)
+    func insertContentToNodeRight(value: inout V, node: TreeNode)
     {
         if adjustCarriageReturnFromNext(value: &value, node: node) {
             // move \n to the new node.
@@ -1142,7 +1144,7 @@ public class PieceTreeBase {
         }
     }
     
-    func createNewPieces(_ _text: [UInt8]) -> [Piece]
+    func createNewPieces(_ _text: V) -> [Piece]
     {
         var text = _text[0..<_text.count]
         
@@ -1153,26 +1155,26 @@ public class PieceTreeBase {
             while text.count > averageBufferSize {
                 let start = text.startIndex
                 let lastChar = Int (text [start + averageBufferSize - 1])
-                var splitText: [UInt8]
+                var splitText: V
                 
                 // TODO: This code has some half-cooked code that does Unicode here
                 if lastChar == 13 || (lastChar >= 0xD800 && lastChar <= 0xDBFF) {
                     // last character is \r or a high surrogate => keep it back
-                    splitText = Array (text [start..<start+(averageBufferSize - 1)])
+                    splitText = V (text [start..<start+(averageBufferSize - 1)])
                     text = text [(start+averageBufferSize - 1)...]
                 } else {
-                    splitText = Array (text [start..<start+averageBufferSize])
+                    splitText = V (text [start..<start+averageBufferSize])
                     text = text[(start+averageBufferSize)...]
                 }
 
-                let lineStarts = LineStarts.createLineStartsArray(Array (splitText))
+                let lineStarts = LineStarts.createLineStartsArray(V (splitText))
                 newPieces.append(Piece(bufferIndex: buffers.count, start: BufferCursor(line: 0, column: 0), end: BufferCursor(line: lineStarts.count-1, column: splitText.count - lineStarts[lineStarts.count-1]), length: splitText.count, lineFeedCount: lineStarts.count-1))
                 buffers.append(StringBuffer(buffer: splitText, lineStarts: lineStarts));
             }
 
-            let lineStarts = LineStarts.createLineStartsArray (Array(text))
+            let lineStarts = LineStarts.createLineStartsArray (V(text))
             newPieces.append(Piece(bufferIndex: buffers.count, start: BufferCursor(line: 0, column: 0), end: BufferCursor(line: lineStarts.count-1, column: text.count - lineStarts[lineStarts.count-1]), length: text.count, lineFeedCount: lineStarts.count-1))
-            buffers.append(StringBuffer(buffer: Array (text), lineStarts: lineStarts))
+            buffers.append(StringBuffer(buffer: V (text), lineStarts: lineStarts))
 
             return newPieces
         }
@@ -1215,7 +1217,7 @@ public class PieceTreeBase {
         return [newPiece]
     }
     
-    public func getLinesRawContent() -> [UInt8]
+    public func getLinesRawContent() -> V
     {
         return getContentOfSubTree(node: root)
     }
@@ -1225,12 +1227,12 @@ public class PieceTreeBase {
         return String(bytes: getLinesRawContent(), encoding: .utf8)!
     }
 
-    func getLineRawContent(_ _lineNumber: Int, _ endOffset: Int = 0) -> [UInt8]
+    func getLineRawContent(_ _lineNumber: Int, _ endOffset: Int = 0) -> V
     {
         var lineNumber = _lineNumber
         var x = root
 
-        var ret: [UInt8] = [];
+        var ret: V = V()
 
         if let cache = searchCache.get2(lineNumber: lineNumber) {
             x = cache.node
@@ -1238,10 +1240,10 @@ public class PieceTreeBase {
             let buffer = buffers[x.piece.bufferIndex].buffer
             let startOffset = offsetInBuffer(x.piece.bufferIndex, x.piece.start)
             if (cache.nodeStartLineNumber ?? 0) + x.piece.lineFeedCount == lineNumber {
-                ret = Array (buffer [(startOffset+prevAccumualtedValue)..<(startOffset + x.piece.length)])
+                ret = V (buffer [(startOffset+prevAccumualtedValue)..<(startOffset + x.piece.length)])
             } else {
                 let accumualtedValue = getAccumulatedValue(node: x, index: lineNumber - (cache.nodeStartLineNumber ?? 0))
-                return Array (buffer [(startOffset + prevAccumualtedValue)..<(startOffset + accumualtedValue - endOffset)])
+                return V (buffer [(startOffset + prevAccumualtedValue)..<(startOffset + accumualtedValue - endOffset)])
             }
         } else {
             var nodeStartOffset = 0
@@ -1256,13 +1258,13 @@ public class PieceTreeBase {
                     let startOffset = offsetInBuffer(x.piece.bufferIndex, x.piece.start)
                     nodeStartOffset += x.size_left
                     searchCache.set(CacheEntry(node: x, nodeStartLineNumber: originalLineNumber - (lineNumber - 1 - x.lf_left), nodeStartOffset: nodeStartOffset))
-                    return Array (buffer[(startOffset + prevAccumualtedValue)..<(startOffset + accumualtedValue - endOffset)])
+                    return V (buffer[(startOffset + prevAccumualtedValue)..<(startOffset + accumualtedValue - endOffset)])
                 } else if x.lf_left + x.piece.lineFeedCount == lineNumber - 1 {
                     let prevAccumualtedValue = getAccumulatedValue(node: x, index: lineNumber - x.lf_left - 2)
                     let buffer = buffers[x.piece.bufferIndex].buffer
                     let startOffset = offsetInBuffer(x.piece.bufferIndex, x.piece.start)
 
-                    ret = Array (buffer[(startOffset + prevAccumualtedValue)..<(startOffset + x.piece.length)])
+                    ret = V (buffer[(startOffset + prevAccumualtedValue)..<(startOffset + x.piece.length)])
                     break;
                 } else {
                     lineNumber -= x.lf_left + x.piece.lineFeedCount
@@ -1280,11 +1282,11 @@ public class PieceTreeBase {
                 let accumualtedValue = getAccumulatedValue(node: x, index: 0)
                 let startOffset = offsetInBuffer(x.piece.bufferIndex, x.piece.start)
 
-                ret += Array (buffer[startOffset..<(startOffset + accumualtedValue - endOffset)])
+                ret += V (buffer[startOffset..<(startOffset + accumualtedValue - endOffset)])
                 return ret
             } else {
                 let startOffset = offsetInBuffer(x.piece.bufferIndex, x.piece.start)
-                ret += Array (buffer [startOffset..<(startOffset+x.piece.length)])
+                ret += V (buffer [startOffset..<(startOffset+x.piece.length)])
             }
 
             x = x.next()
@@ -1401,7 +1403,7 @@ public class PieceTreeBase {
         validateCRLFWithPrevNode(nextNode: &newNode)
     }
     
-    func appendToNode(node: inout TreeNode, value: inout [UInt8]) {
+    func appendToNode(node: inout TreeNode, value: inout V) {
         if adjustCarriageReturnFromNext(value: &value, node: node) {
             // In Swift, we mutated this copy of value
             // value += [10]
@@ -1542,10 +1544,10 @@ public class PieceTreeBase {
     }
     
     func shouldCheckCRLF() -> Bool {
-        return !(eolNormalized && eol == [10]);
+        return !(eolNormalized && eol == V([10]));
     }
     
-    func startWithLF(_ val: [UInt8]) -> Bool
+    func startWithLF(_ val: V) -> Bool
     {
         return val [0] == 10
     }
@@ -1571,7 +1573,7 @@ public class PieceTreeBase {
         return buffers[piece.bufferIndex].buffer [startOffset] == 10
     }
     
-    func endWithCR(_ val: [UInt8]) -> Bool {
+    func endWithCR(_ val: V) -> Bool {
         return val[val.count - 1] == 13
     }
 
@@ -1639,7 +1641,7 @@ public class PieceTreeBase {
         }
 
         // create new piece which contains \r\n
-        let pieces = createNewPieces([13 /*CR*/, 10 /*LF*/])
+        let pieces = createNewPieces(V([13 /*CR*/, 10 /*LF*/]))
         let _ = rbInsertRight(prev, pieces[0])
         // delete empty nodes
 
@@ -1648,7 +1650,7 @@ public class PieceTreeBase {
         }
     }
     
-    func adjustCarriageReturnFromNext(value: inout [UInt8], node: TreeNode) -> Bool {
+    func adjustCarriageReturnFromNext(value: inout V, node: TreeNode) -> Bool {
         if shouldCheckCRLF() && endWithCR(value) {
             let nextNode = node.next()
             if startWithLF(nextNode) {
@@ -1686,25 +1688,25 @@ public class PieceTreeBase {
         return callback(node) && iterate(node: node.right!, callback: callback);
     }
     
-    func getNodeContent(_ node: TreeNode) -> [UInt8]
+    func getNodeContent(_ node: TreeNode) -> V
     {
         if node === TreeNode.SENTINEL {
-            return []
+            return V()
         }
         let buffer = buffers [node.piece.bufferIndex]
         let piece = node.piece
         let startOffset = offsetInBuffer(piece.bufferIndex, piece.start)
         let endOffset = offsetInBuffer(piece.bufferIndex, piece.end)
-        return Array (buffer.buffer [startOffset..<endOffset])
+        return V (buffer.buffer [startOffset..<endOffset])
     }
     
-    func getPieceContent(piece: Piece) -> [UInt8] {
+    func getPieceContent(piece: Piece) -> V {
         
         let buffer = buffers[piece.bufferIndex]
         let startOffset = offsetInBuffer(piece.bufferIndex, piece.start)
         let endOffset = offsetInBuffer(piece.bufferIndex, piece.end)
         let currentContent = buffer.buffer [startOffset..<endOffset]
-        return Array (currentContent)
+        return V (currentContent)
     }
     
     /**
@@ -1771,8 +1773,8 @@ public class PieceTreeBase {
         return z
     }
     
-    func getContentOfSubTree(node: TreeNode) -> [UInt8] {
-        var str: [UInt8] = []
+    func getContentOfSubTree(node: TreeNode) -> V {
+        var str: V = V()
 
         iterate(node: node, callback: { node in
             str += getNodeContent(node)

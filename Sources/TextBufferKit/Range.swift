@@ -29,7 +29,7 @@ import Foundation
 
 
 /// A range in the editor. (startLineNumber,startColumn) is <= (endLineNumber,endColumn)
-public struct Range {
+public struct Range<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int, V.Element == UInt8 {
     // negative if a < b
     // zero if a == b
     // positive if a > b
@@ -52,7 +52,7 @@ public struct Range {
         return Range(startLineNumber: startLine, startColumn: startColumn, endLineNumber: endLine, endColumn: endColumn)
     }
     
-    public static func from (start: Int, end: Int, on: PieceTreeTextBuffer) -> Range
+    public static func from (start: Int, end: Int, on: PieceTreeTextBuffer<V>) -> Range
     {
         let sp = on.getPositionAt(offset: start)
         let ep = on.getPositionAt(offset: end)

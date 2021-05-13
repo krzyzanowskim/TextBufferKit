@@ -29,7 +29,7 @@ import Foundation
 
 let bomArray: [UInt8] = [0xeb, 0xbb, 0xbf]
 
-func startsWithUTF8BOM(str: [UInt8]) -> Bool
+func startsWithUTF8BOM<V: RangeReplaceableCollection & RandomAccessCollection & Hashable>(str: V) -> Bool where V.Index == Int, V.Element == UInt8
 {
     // UTF8-BOM 0xEF,0xBB,0xBF
 
@@ -47,15 +47,15 @@ public enum DefaultEndOfLine {
     case CRLF
 }
 
-public class PieceTreeTextBufferFactory {
-    var chunks: [StringBuffer]
-    var bom: [UInt8]
+public class PieceTreeTextBufferFactory<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int, V.Element == UInt8 {
+    var chunks: [StringBuffer<V>]
+    var bom: V
     var cr, lf, crlf: Int
     var normalizeEol: Bool
     var containsRtl: Bool = false
     var isBasicAscii: Bool = false
     
-    init(chunks: [StringBuffer], bom: [UInt8], cr: Int, lf: Int, crlf: Int, normalizeEol:Bool, containsRtl: Bool? = nil, isBasicAscii: Bool? = nil)
+    init(chunks: [StringBuffer<V>], bom: V, cr: Int, lf: Int, crlf: Int, normalizeEol:Bool, containsRtl: Bool? = nil, isBasicAscii: Bool? = nil)
     {
         self.chunks = chunks
         self.bom = bom
@@ -66,11 +66,13 @@ public class PieceTreeTextBufferFactory {
         self.containsRtl = containsRtl ?? false
         self.isBasicAscii = isBasicAscii ?? false
     }
-    
+}
+
+extension PieceTreeTextBufferFactory where V == [UInt8] {
     //
     // returns an array of either '\r\n' | '\n'
     //
-    func getEOL(_ defaultEOL: DefaultEndOfLine) -> [UInt8] {
+    func getEOL(_ defaultEOL: DefaultEndOfLine) -> V {
         let totalEOLCount = cr + lf + crlf
         let totalCRCount = cr + crlf
         if (totalEOLCount == 0) {
@@ -85,7 +87,7 @@ public class PieceTreeTextBufferFactory {
         return [10]
     }
 
-    public func createPieceTreeBase (_ defaultEOL: DefaultEndOfLine = .LF) -> PieceTreeBase
+    public func createPieceTreeBase (_ defaultEOL: DefaultEndOfLine = .LF) -> PieceTreeBase<V>
     {
         let eol = getEOL(defaultEOL)
         var chunks = self.chunks
@@ -104,7 +106,7 @@ public class PieceTreeTextBufferFactory {
         return PieceTreeBase(chunks: &chunks, eol: eol, eolNormalized: normalizeEol)
     }
 
-    public func create (_ defaultEOL: DefaultEndOfLine = .LF) -> PieceTreeTextBuffer
+    public func create (_ defaultEOL: DefaultEndOfLine = .LF) -> PieceTreeTextBuffer<V>
     {
         let eol = getEOL(defaultEOL)
         var chunks = self.chunks
@@ -124,36 +126,39 @@ public class PieceTreeTextBufferFactory {
     }
 
 
-    public func getFirstLineText(lengthLimit: Int) -> [UInt8] {
-        return Array (chunks [0].buffer [0..<lengthLimit])
+    public func getFirstLineText(lengthLimit: Int) -> V {
+        return V (chunks [0].buffer [0..<lengthLimit])
         // TODO
         // return chunks[0].buffer.substr(0, 100).split(/\r\n|\r|\n/)[0];
     }
 }
 
-public class PieceTreeTextBufferBuilder {
-    var chunks: [StringBuffer] = []
-    var bom: [UInt8] = []
+public class PieceTreeTextBufferBuilder<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int, V.Element == UInt8 {
+    var chunks: [StringBuffer<V>] = []
+    var bom: V = V()
     
     var hasPreviousChar: Bool = false
-    var previousChar: UInt8 = 0
+    var previousChar: V.Element = 0
 
     var cr: Int = 0
     var lf: Int = 0
     var crlf: Int = 0
-    
+
     public init ()
     {
     }
-    
+}
+
+extension PieceTreeTextBufferBuilder where V == [UInt8] {
+
     public func acceptChunk (_ str: String, encoding: String.Encoding = .utf8)
     {
         if let d = str.data (using: encoding){
-            acceptChunk([UInt8](d))
+            acceptChunk(V(d))
         }
     }
     
-    public func acceptChunk(_ _chunk: [UInt8])
+    public func acceptChunk(_ _chunk: V)
     {
         if _chunk.count == 0 {
             return
@@ -162,15 +167,15 @@ public class PieceTreeTextBufferBuilder {
         var chunk = _chunk
         if chunks.count == 0 {
             if startsWithUTF8BOM(str: chunk) {
-                bom = bomArray
-                chunk = Array (chunk [3...])
+                bom = V (bomArray)
+                chunk = V (chunk [3...])
             }
         }
         
         let lastChar = chunk [chunk.count - 1]
         if (lastChar == 13) {
             // last character is \r
-            acceptChunk1(Array (chunk [0..<chunk.count - 1]), allowEmptyStrings: false)
+            acceptChunk1(V (chunk [0..<chunk.count - 1]), allowEmptyStrings: false)
             hasPreviousChar = true
             previousChar = lastChar
         } else {
@@ -180,7 +185,7 @@ public class PieceTreeTextBufferBuilder {
         }
     }
 
-    func acceptChunk1(_ chunk: [UInt8], allowEmptyStrings: Bool) {
+    func acceptChunk1(_ chunk: V, allowEmptyStrings: Bool) {
         if !allowEmptyStrings && chunk.count == 0 {
             // Nothing to do
             return
@@ -193,7 +198,7 @@ public class PieceTreeTextBufferBuilder {
         }
     }
 
-    func acceptChunk2(_ chunk: [UInt8])
+    func acceptChunk2(_ chunk: V)
     {
         let lineStarts = LineStarts(data: chunk)
 
@@ -203,7 +208,7 @@ public class PieceTreeTextBufferBuilder {
         crlf += lineStarts.crlf
     }
 
-    public func finish(normalizeEol: Bool = true) -> PieceTreeTextBufferFactory {
+    public func finish(normalizeEol: Bool = true) -> PieceTreeTextBufferFactory<V> {
         finish()
         return PieceTreeTextBufferFactory(chunks: chunks, bom: bom, cr: cr, lf: lf, crlf: crlf, normalizeEol: normalizeEol)
     }
@@ -211,7 +216,7 @@ public class PieceTreeTextBufferBuilder {
     func finish()
     {
         if chunks.count == 0 {
-            acceptChunk1([], allowEmptyStrings: true)
+            acceptChunk1(V(), allowEmptyStrings: true)
         }
 
         if hasPreviousChar {
