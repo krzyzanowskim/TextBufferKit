@@ -97,7 +97,7 @@ public class PieceTreeBase<V: RangeReplaceableCollection & RandomAccessCollectio
     var searchCache: PieceTreeSearchCache = PieceTreeSearchCache(limit: 1)
     var lastVisitedLine: (lineNumber: Int, value: V) = (0, V())
 
-    private init(eol: V) {
+    init(eol: V) {
         _eol = eol
     }
 
@@ -134,6 +134,43 @@ public class PieceTreeBase<V: RangeReplaceableCollection & RandomAccessCollectio
     {
         for node in nodes {
             rbDelete (self, node)
+        }
+    }
+
+    public func getOffsetAt(_ _lineNumber: Int, _ column: Int)-> Int {
+        var leftLen = 0; // inorder
+        var lineNumber = _lineNumber
+        var x = root
+
+        while x !== TreeNode.SENTINEL {
+            if x.left !== TreeNode.SENTINEL && x.lf_left + 1 >= lineNumber {
+                x = x.left!
+            } else if x.lf_left + x.piece.lineFeedCount + 1 >= lineNumber {
+                leftLen += x.size_left
+                // lineNumber >= 2
+                let accumualtedValInCurrentIndex = getAccumulatedValue(node: x, index: lineNumber - x.lf_left - 2)
+                return leftLen + accumualtedValInCurrentIndex + column - 1
+            } else {
+                lineNumber -= x.lf_left + x.piece.lineFeedCount
+                leftLen += x.size_left + x.piece.length
+                x = x.right!
+            }
+        }
+
+        return leftLen
+    }
+
+    func getAccumulatedValue(node: TreeNode, index: Int) -> Int {
+        if index < 0 {
+            return 0
+        }
+        let piece = node.piece
+        let lineStarts = buffers[piece.bufferIndex].lineStarts
+        let expectedLineStartIndex = piece.start.line + index + 1
+        if expectedLineStartIndex > piece.end.line {
+            return lineStarts[piece.end.line] + piece.end.column - lineStarts[piece.start.line] - piece.start.column
+        } else {
+            return lineStarts[expectedLineStartIndex] - lineStarts[piece.start.line] - piece.start.column
         }
     }
 }
@@ -282,29 +319,6 @@ extension PieceTreeBase where V.Element == UInt8 {
         })
 
         return ret;
-    }
-    
-    public func getOffsetAt(_ _lineNumber: Int, _ column: Int)-> Int {
-        var leftLen = 0; // inorder
-        var lineNumber = _lineNumber
-        var x = root
-
-        while x !== TreeNode.SENTINEL {
-            if x.left !== TreeNode.SENTINEL && x.lf_left + 1 >= lineNumber {
-                x = x.left!
-            } else if x.lf_left + x.piece.lineFeedCount + 1 >= lineNumber {
-                leftLen += x.size_left
-                // lineNumber >= 2
-                let accumualtedValInCurrentIndex = getAccumulatedValue(node: x, index: lineNumber - x.lf_left - 2)
-                return leftLen + accumualtedValInCurrentIndex + column - 1
-            } else {
-                lineNumber -= x.lf_left + x.piece.lineFeedCount
-                leftLen += x.size_left + x.piece.length
-                x = x.right!
-            }
-        }
-
-        return leftLen
     }
 
     public func getPositionAt(_ _offset: Int) -> Position {
@@ -1143,20 +1157,6 @@ extension PieceTreeBase where V.Element == UInt8 {
         }
 
         return (index: lineCnt, remainder: pos.column)
-    }
-    
-    func getAccumulatedValue(node: TreeNode, index: Int) -> Int {
-        if index < 0 {
-            return 0
-        }
-        let piece = node.piece
-        let lineStarts = buffers[piece.bufferIndex].lineStarts
-        let expectedLineStartIndex = piece.start.line + index + 1
-        if expectedLineStartIndex > piece.end.line {
-            return lineStarts[piece.end.line] + piece.end.column - lineStarts[piece.start.line] - piece.start.column
-        } else {
-            return lineStarts[expectedLineStartIndex] - lineStarts[piece.start.line] - piece.start.column
-        }
     }
     
     func deleteNodeTail(node: inout TreeNode, pos: BufferCursor)

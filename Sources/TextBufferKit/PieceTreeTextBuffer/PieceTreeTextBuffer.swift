@@ -27,22 +27,28 @@
 // https://github.com/microsoft/vscode/blob/master/src/vs/editor/common/model/pieceTreeTextBuffer/pieceTreeTextBuffer.ts
 import Foundation
 
-public class PieceTreeTextBuffer<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int, V.Element == UInt8 {
-    var pieceTree: PieceTreeBase<V>
+public class PieceTreeTextBuffer<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int {
+    private let pieceTree: PieceTreeBase<V>
     public private(set) var bom: V
     public private(set) var mightContainRTL: Bool
     public private(set) var mightContainNonBasicASCII: Bool
 
-    init(chunks: inout [StringBuffer<V>], BOM: V, eol: V, containsRTL: Bool, isBasicASCII: Bool, eolNormalized: Bool)
+    private init(BOM: V, eol: V, pieceTree: PieceTreeBase<V>, containsRTL: Bool, isBasicASCII: Bool, eolNormalized: Bool)
     {
         self.bom = BOM
         self.mightContainNonBasicASCII = !isBasicASCII
         self.mightContainRTL = containsRTL
-        self.pieceTree = PieceTreeBase(chunks: &chunks, eol: eol, eolNormalized: eolNormalized)
+        self.pieceTree = pieceTree
     }
 }
 
 extension PieceTreeTextBuffer where V.Element == UInt8 {
+
+    convenience init(chunks: inout [StringBuffer<V>], BOM: V, eol: V, containsRTL: Bool, isBasicASCII: Bool, eolNormalized: Bool)
+    {
+        let pieceTree = PieceTreeBase(chunks: &chunks, eol: eol, eolNormalized: eolNormalized)
+        self.init(BOM: BOM, eol: eol, pieceTree: pieceTree, containsRTL: containsRTL, isBasicASCII: isBasicASCII, eolNormalized: eolNormalized)
+    }
 
     public var eol: V {
         get { pieceTree.eol }
