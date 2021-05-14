@@ -29,8 +29,7 @@ import Foundation
 /**
  * Tracks the offset for each start of a line created from a byte array
  */
-struct LineStarts<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Index == Int, V.Element == UInt8 {
-
+struct LineStarts<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> {
 
     /// Offsets for each line start
     public var lineStarts: [Int]
@@ -43,21 +42,23 @@ struct LineStarts<V: RangeReplaceableCollection & BidirectionalCollection & Hash
     /// Whether this file contains simple ascii characters (tab, and chars 32 to 127) or not
     public var isBasicAscii: Bool
 
+}
+
+extension LineStarts where V == [UInt8] {
     /**
      * Given a byte array containing the text buffer, create an array pointing to the
      * beginning of each line -- where lines are considered those immediately after a
      * \r\n or a \n
      */
-    public static func createLineStartsArray (_ data: V) -> [Int]
+    static func createLineStartsArray (_ data: V) -> [Int]
     {
         var result: [Int] = [0]
-
         var i = 0
         let len = data.count
         while i < data.count {
             let chr = data [i]
-            if chr == 13 {
-                if (i+1) < len && data [i+1] == 10 {
+            if chr == 13 { // \r
+                if (i+1) < len && data [i+1] == 10 { // \n
                     // \r\n case
                     result.append (i + 2)
                     i += 1 // skip \n
@@ -65,7 +66,7 @@ struct LineStarts<V: RangeReplaceableCollection & BidirectionalCollection & Hash
                     // \r .. case
                     result.append (i + 1)
                 }
-            } else if chr == 10 {
+            } else if chr == 10 { // \n
                 result.append (i + 1)
             }
             i += 1
@@ -76,7 +77,7 @@ struct LineStarts<V: RangeReplaceableCollection & BidirectionalCollection & Hash
     /**
      * Creates a LineStarts structure from the given byte array
      */
-    public init (data: V)
+    init (data: V)
     {
         var result: [Int] = [0]
         var cr = 0

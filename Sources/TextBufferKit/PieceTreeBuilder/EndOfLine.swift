@@ -36,6 +36,8 @@ public enum EndOfLine<V: RangeReplaceableCollection & BidirectionalCollection & 
      */
     case CRLF = "\r\n"
 
+    case CR = "\r"
+
     // RawRepresentable stub
 
     var stringValue: String {
@@ -50,6 +52,8 @@ extension EndOfLine where V == [UInt8] {
             self = .CRLF
         case EndOfLine.LF.stringValue:
             self = .LF
+        case EndOfLine.CR.stringValue:
+            self = .CR
         default:
             return nil
         }
@@ -60,6 +64,8 @@ extension EndOfLine where V == [UInt8] {
         case .CRLF:
             return stringValue.unicodeScalars.map { UInt8($0.value) }
         case .LF:
+            return stringValue.unicodeScalars.map { UInt8($0.value) }
+        case .CR:
             return stringValue.unicodeScalars.map { UInt8($0.value) }
         }
     }
@@ -72,6 +78,8 @@ extension EndOfLine where V == String {
             self = .CRLF
         case EndOfLine.LF.stringValue:
             self = .LF
+        case EndOfLine.CR.stringValue:
+            self = .CR
         default:
             return nil
         }
@@ -82,6 +90,8 @@ extension EndOfLine where V == String {
         case .CRLF:
             return stringValue
         case .LF:
+            return stringValue
+        case .CR:
             return stringValue
         }
     }

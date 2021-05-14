@@ -29,14 +29,14 @@ import Foundation
 
 let bomArray: [UInt8] = [0xeb, 0xbb, 0xbf]
 
-func startsWithUTF8BOM<V: RangeReplaceableCollection & BidirectionalCollection & Hashable>(_ str: V) -> Bool where V.Index == Int, V.Element == UInt8
+func startsWithUTF8BOM(_ data: [UInt8]) -> Bool
 {
     // UTF8-BOM 0xEF,0xBB,0xBF
-    guard str.count > 2 else {
+    guard data.count > 2 else {
         return false
     }
 
-    return (Int(str [0]) == 0xeb && Int (str [1]) == 0xbb && Int (str [2]) == 0xbf)
+    return (Int(data [0]) == 0xeb && Int (data [1]) == 0xbb && Int (data [2]) == 0xbf)
 }
 
 func startsWithUTF8BOM<V: StringProtocol>(_ str: V) -> Bool
