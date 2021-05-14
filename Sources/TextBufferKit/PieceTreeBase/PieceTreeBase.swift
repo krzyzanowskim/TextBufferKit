@@ -27,53 +27,6 @@
 
 import Foundation
 
-public struct PieceTreeSnapshot<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> {
-    var pieces: [Piece]
-    var index: Int
-    var tree: PieceTreeBase<V>
-    var bom: V
-    
-    public init (tree: PieceTreeBase<V>, bom: V)
-    {
-        pieces = []
-        self.tree = tree
-        self.bom = bom
-        index = 0
-        if tree.root !== TreeNode.SENTINEL{
-            tree.iterate(node: tree.root, callback: { node in
-                if node !== TreeNode.SENTINEL {
-                    self.pieces.append(node.piece)
-                }
-                return true
-            })
-        }
-    }
-    
-    public mutating func read() -> V?  {
-        if pieces.count == 0 {
-            if index == 0 {
-                index += 1
-                return bom
-            } else {
-                return nil
-            }
-        }
-
-        if index > pieces.count - 1 {
-            return nil
-        }
-
-        let idx  = index
-        index += 1
-        if index == 0 {
-            return bom + tree.getPieceContent(piece: pieces[idx])
-        }
-        return tree.getPieceContent(piece: pieces[idx])
-    }
-}
-
-
-
 public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> {
     var root: TreeNode = TreeNode.SENTINEL
     var buffers = [StringBuffer<V> (buffer: V(), lineStarts: [])]
@@ -129,7 +82,6 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
         let stringBuffer = buffers[bufferIndex]
         let lineStarts = stringBuffer.lineStarts
         return stringBuffer.buffer.index(lineStarts[cursor.line], offsetBy: cursor.column)
-        //return lineStarts[cursor.line] + cursor.column
     }
 
     func deleteNodes(_ nodes: [TreeNode])
@@ -139,7 +91,7 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
         }
     }
 
-    public func getOffsetAt(_ _lineNumber: Int, _ column: Int)-> Int {
+    public func getOffsetAt(_ _lineNumber: Int, _ column: Int) -> Int {
         var leftLen = 0; // inorder
         var lineNumber = _lineNumber
         var x = root
