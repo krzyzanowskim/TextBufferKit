@@ -27,7 +27,7 @@
 
 import Foundation
 
-public struct PieceTreeSnapshot<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Index == Int {
+public struct PieceTreeSnapshot<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> {
     var pieces: [Piece]
     var index: Int
     var tree: PieceTreeBase<V>
@@ -74,7 +74,7 @@ public struct PieceTreeSnapshot<V: RangeReplaceableCollection & BidirectionalCol
 
 
 
-public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Index == Int {
+public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> {
     var root: TreeNode = TreeNode.SENTINEL
     var buffers = [StringBuffer<V> (buffer: V(), lineStarts: [])]
     public private(set) var lineCount: Int = 1
@@ -124,10 +124,12 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
         return V (currentContent)
     }
 
-    func offsetInBuffer(_ bufferIndex: Int, _ cursor: BufferCursor) -> Int
+    func offsetInBuffer(_ bufferIndex: Int, _ cursor: BufferCursor) -> V.Index
     {
-        let lineStarts = buffers[bufferIndex].lineStarts
-        return lineStarts[cursor.line] + cursor.column
+        let stringBuffer = buffers[bufferIndex]
+        let lineStarts = stringBuffer.lineStarts
+        return stringBuffer.buffer.index(lineStarts[cursor.line], offsetBy: cursor.column)
+        //return lineStarts[cursor.line] + cursor.column
     }
 
     func deleteNodes(_ nodes: [TreeNode])
@@ -161,16 +163,24 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
     }
 
     func getAccumulatedValue(node: TreeNode, index: Int) -> Int {
-        if index < 0 {
+        guard index >= 0 else {
             return 0
         }
+
         let piece = node.piece
-        let lineStarts = buffers[piece.bufferIndex].lineStarts
+        let stringBuffer = buffers[piece.bufferIndex]
+        let lineStarts = stringBuffer.lineStarts
         let expectedLineStartIndex = piece.start.line + index + 1
         if expectedLineStartIndex > piece.end.line {
-            return lineStarts[piece.end.line] + piece.end.column - lineStarts[piece.start.line] - piece.start.column
+            return stringBuffer.buffer.distance(
+                from: stringBuffer.buffer.index(lineStarts[piece.start.line], offsetBy: piece.start.column),
+                to: stringBuffer.buffer.index(lineStarts[piece.end.line], offsetBy: piece.end.column)
+            )
         } else {
-            return lineStarts[expectedLineStartIndex] - lineStarts[piece.start.line] - piece.start.column
+            return stringBuffer.buffer.distance(
+                from: stringBuffer.buffer.index(lineStarts[piece.start.line], offsetBy: piece.start.column),
+                to: lineStarts[expectedLineStartIndex]
+            )
         }
     }
 }
@@ -395,13 +405,13 @@ extension PieceTreeBase where V == [UInt8] {
             let node = startPosition.node
             let buffer = buffers[node.piece.bufferIndex].buffer
             let startOffset = offsetInBuffer(node.piece.bufferIndex, node.piece.start)
-            return V (buffer [(startOffset + startPosition.remainder)..<(startOffset + endPosition.remainder)])
+            return V (buffer [buffer.index(startOffset, offsetBy: startPosition.remainder)..<buffer.index(startOffset, offsetBy: endPosition.remainder)])
         }
 
         var x = startPosition.node
         var buffer = buffers[x.piece.bufferIndex].buffer
         let startOffset = offsetInBuffer(x.piece.bufferIndex, x.piece.start)
-        var ret = V (buffer [(startOffset + startPosition.remainder)..<(startOffset + x.piece.length)])
+        var ret = V (buffer [buffer.index(startOffset, offsetBy: startPosition.remainder)..<buffer.index(startOffset, offsetBy: x.piece.length)])
 
         x = x.next()
         while x !== TreeNode.SENTINEL {
@@ -409,10 +419,10 @@ extension PieceTreeBase where V == [UInt8] {
             let startOffset = offsetInBuffer(x.piece.bufferIndex, x.piece.start)
 
             if x === endPosition.node {
-                ret += Array (buffer [startOffset..<(startOffset + endPosition.remainder)])
+                ret += Array (buffer [startOffset..<buffer.index(startOffset, offsetBy: endPosition.remainder)])
                 break;
             } else {
-                ret += Array (buffer[startOffset..<(startOffset+x.piece.length)])
+                ret += Array (buffer[startOffset..<buffer.index(startOffset, offsetBy: x.piece.length)])
             }
 
             x = x.next()

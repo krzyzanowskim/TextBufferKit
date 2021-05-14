@@ -26,7 +26,7 @@
 
 import Foundation
 
-public struct ApplyEditsResult<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Index == Int {
+public struct ApplyEditsResult<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> {
     public var reverseEdits: [IdentifiedSingleEditOperation<V>]
     public var changes: [InternalModelContentChange<V>]
     public var trimAutoWhitespaceLineNumbers: [Int]?

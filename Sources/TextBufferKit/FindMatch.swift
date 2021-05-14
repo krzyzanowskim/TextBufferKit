@@ -8,7 +8,7 @@
 
 import Foundation
 
-public struct FindMatch<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Index == Int {
+public struct FindMatch<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> {
     public var range: Range<V>
     public var matches: [V]?
 }

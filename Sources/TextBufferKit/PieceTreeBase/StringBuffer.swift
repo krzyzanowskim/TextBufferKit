@@ -26,7 +26,7 @@
 
 import Foundation
 
-public struct StringBuffer<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Index == Int {
+public struct StringBuffer<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> {
     var buffer: V
-    var lineStarts: [Int]
+    var lineStarts: [V.Index]
 }

@@ -49,7 +49,7 @@ func startsWithUTF8BOM<V: StringProtocol>(_ str: V) -> Bool
     return Array(str.utf8.prefix(bomArray.count)) == bomArray
 }
 
-public class PieceTreeTextBufferFactory<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Index == Int {
+public class PieceTreeTextBufferFactory<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> {
     var chunks: [StringBuffer<V>]
     var bom: V
     var cr, lf, crlf: Int
@@ -136,7 +136,7 @@ extension PieceTreeTextBufferFactory where V == [UInt8] {
     }
 }
 
-public class PieceTreeTextBufferBuilder<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Index == Int {
+public class PieceTreeTextBufferBuilder<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> {
     var chunks: [StringBuffer<V>] = []
     var bom: V = V()
     
@@ -155,7 +155,8 @@ public class PieceTreeTextBufferBuilder<V: RangeReplaceableCollection & Bidirect
 
 extension PieceTreeTextBufferBuilder where V == [UInt8] {
 
-    public convenience init() {
+    public convenience init()
+    {
         self.init(previousChar: 0)
     }
 

@@ -29,7 +29,7 @@ import Foundation
 
 
 /// A range in the editor. (startLineNumber,startColumn) is <= (endLineNumber,endColumn)
-public struct Range<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Index == Int {
+public struct Range<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> {
     // negative if a < b
     // zero if a == b
     // positive if a > b
@@ -61,7 +61,7 @@ public struct Range<V: RangeReplaceableCollection & BidirectionalCollection & Ha
     /// Column on which the range ends in line `endLineNumber`.
     public var endColumn: Int
     
-    public func isEmpty() ->Bool
+    public func isEmpty() -> Bool
     {
         startLineNumber == endLineNumber && startColumn == endColumn
     }

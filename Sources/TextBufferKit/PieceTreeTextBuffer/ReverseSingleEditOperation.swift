@@ -26,7 +26,7 @@
 
 import Foundation
 
-public class ReverseSingleEditOperation<V: RangeReplaceableCollection & BidirectionalCollection & Hashable>: IdentifiedSingleEditOperation<V> where V.Index == Int {
+public class ReverseSingleEditOperation<V: RangeReplaceableCollection & BidirectionalCollection & Hashable>: IdentifiedSingleEditOperation<V> {
     var sortIndex: Int
     internal init(sortIndex: Int, identifier: SingleEditOperationIdentifier?, range: Range<V>, text: V?, forceMoveMarkers: Bool, isAutoWhitespaceEdit: Bool?, isTracked: Bool) {
         self.sortIndex = sortIndex

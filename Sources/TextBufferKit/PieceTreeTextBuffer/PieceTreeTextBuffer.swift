@@ -27,7 +27,7 @@
 // https://github.com/microsoft/vscode/blob/master/src/vs/editor/common/model/pieceTreeTextBuffer/pieceTreeTextBuffer.ts
 import Foundation
 
-public class PieceTreeTextBuffer<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Index == Int {
+public class PieceTreeTextBuffer<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> {
     private let pieceTree: PieceTreeBase<V>
     public private(set) var bom: V
     public private(set) var mightContainRTL: Bool
@@ -95,7 +95,7 @@ extension PieceTreeTextBuffer where V == [UInt8] {
         pieceTree.insert(offset, value)
     }
     
-    public func getPositionAt(offset: Int) ->  Position
+    public func getPositionAt(offset: Int) -> Position
     {
         return pieceTree.getPositionAt(offset)
     }
