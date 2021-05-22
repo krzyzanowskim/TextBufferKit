@@ -17,6 +17,9 @@
 		752C47E1264DC7D800017C7C /* BufferCursor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752C47E0264DC7D800017C7C /* BufferCursor.swift */; };
 		752C47E3264DC7ED00017C7C /* Piece.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752C47E2264DC7ED00017C7C /* Piece.swift */; };
 		752C47E6264DE88F00017C7C /* EndOfLine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752C47E5264DE88F00017C7C /* EndOfLine.swift */; };
+		7557FE8A265975AF003F1B34 /* PieceTreeTextBufferFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7557FE89265975AF003F1B34 /* PieceTreeTextBufferFactory.swift */; };
+		7557FE8C26597626003F1B34 /* PieceTreeSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7557FE8B26597626003F1B34 /* PieceTreeSnapshot.swift */; };
+		7557FE8E26597863003F1B34 /* PieceTreeTextBufferBuilder+Speclialization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7557FE8D26597863003F1B34 /* PieceTreeTextBufferBuilder+Speclialization.swift */; };
 		757A3446264DBA2000E9EAA3 /* InternalModelContentChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757A3445264DBA2000E9EAA3 /* InternalModelContentChange.swift */; };
 		757A3448264DBAA900E9EAA3 /* ApplyEditsResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757A3447264DBAA900E9EAA3 /* ApplyEditsResult.swift */; };
 		757A344A264DBACA00E9EAA3 /* EndOfLinePreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757A3449264DBACA00E9EAA3 /* EndOfLinePreference.swift */; };
@@ -31,7 +34,7 @@
 		E3A891FC2326F736001FA258 /* PieceTreeTextBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A891F42326F736001FA258 /* PieceTreeTextBuffer.swift */; };
 		E3A891FD2326F736001FA258 /* Position.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A891F52326F736001FA258 /* Position.swift */; };
 		E3A891FE2326F736001FA258 /* TreeNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A891F62326F736001FA258 /* TreeNode.swift */; };
-		E3A891FF2326F736001FA258 /* PieceTreeBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A891F72326F736001FA258 /* PieceTreeBuilder.swift */; };
+		E3A891FF2326F736001FA258 /* PieceTreeTextBufferBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A891F72326F736001FA258 /* PieceTreeTextBufferBuilder.swift */; };
 		E3A892032326F742001FA258 /* TextBufferKitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A892012326F742001FA258 /* TextBufferKitTests.swift */; };
 		E3A892042326F742001FA258 /* PieceTreeTextBufferTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A892022326F742001FA258 /* PieceTreeTextBufferTests.swift */; };
 /* End PBXBuildFile section */
@@ -63,6 +66,9 @@
 		752C47E0264DC7D800017C7C /* BufferCursor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BufferCursor.swift; sourceTree = "<group>"; };
 		752C47E2264DC7ED00017C7C /* Piece.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Piece.swift; sourceTree = "<group>"; };
 		752C47E5264DE88F00017C7C /* EndOfLine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EndOfLine.swift; sourceTree = "<group>"; };
+		7557FE89265975AF003F1B34 /* PieceTreeTextBufferFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PieceTreeTextBufferFactory.swift; sourceTree = "<group>"; };
+		7557FE8B26597626003F1B34 /* PieceTreeSnapshot.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PieceTreeSnapshot.swift; sourceTree = "<group>"; };
+		7557FE8D26597863003F1B34 /* PieceTreeTextBufferBuilder+Speclialization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PieceTreeTextBufferBuilder+Speclialization.swift"; sourceTree = "<group>"; };
 		757A3445264DBA2000E9EAA3 /* InternalModelContentChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternalModelContentChange.swift; sourceTree = "<group>"; };
 		757A3447264DBAA900E9EAA3 /* ApplyEditsResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplyEditsResult.swift; sourceTree = "<group>"; };
 		757A3449264DBACA00E9EAA3 /* EndOfLinePreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EndOfLinePreference.swift; sourceTree = "<group>"; };
@@ -77,7 +83,7 @@
 		E3A891F42326F736001FA258 /* PieceTreeTextBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PieceTreeTextBuffer.swift; sourceTree = "<group>"; };
 		E3A891F52326F736001FA258 /* Position.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Position.swift; sourceTree = "<group>"; };
 		E3A891F62326F736001FA258 /* TreeNode.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TreeNode.swift; sourceTree = "<group>"; };
-		E3A891F72326F736001FA258 /* PieceTreeBuilder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PieceTreeBuilder.swift; sourceTree = "<group>"; };
+		E3A891F72326F736001FA258 /* PieceTreeTextBufferBuilder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PieceTreeTextBufferBuilder.swift; sourceTree = "<group>"; };
 		E3A892012326F742001FA258 /* TextBufferKitTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TextBufferKitTests.swift; sourceTree = "<group>"; };
 		E3A892022326F742001FA258 /* PieceTreeTextBufferTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PieceTreeTextBufferTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -177,6 +183,7 @@
 			children = (
 				E3A891F12326F736001FA258 /* PieceTreeBase.swift */,
 				752C47D4264DC6AD00017C7C /* PieceTreeSearchCache.swift */,
+				7557FE8B26597626003F1B34 /* PieceTreeSnapshot.swift */,
 				752C47D6264DC6D200017C7C /* LineStarts.swift */,
 				752C47D8264DC6FE00017C7C /* CacheEntry.swift */,
 				752C47DA264DC71C00017C7C /* StringBuffer.swift */,
@@ -191,7 +198,9 @@
 		752C47E4264DE88000017C7C /* PieceTreeBuilder */ = {
 			isa = PBXGroup;
 			children = (
-				E3A891F72326F736001FA258 /* PieceTreeBuilder.swift */,
+				E3A891F72326F736001FA258 /* PieceTreeTextBufferBuilder.swift */,
+				7557FE8D26597863003F1B34 /* PieceTreeTextBufferBuilder+Speclialization.swift */,
+				7557FE89265975AF003F1B34 /* PieceTreeTextBufferFactory.swift */,
 				752C47E5264DE88F00017C7C /* EndOfLine.swift */,
 			);
 			path = PieceTreeBuilder;
@@ -340,6 +349,7 @@
 				E3A891FC2326F736001FA258 /* PieceTreeTextBuffer.swift in Sources */,
 				757A3446264DBA2000E9EAA3 /* InternalModelContentChange.swift in Sources */,
 				E3A891FD2326F736001FA258 /* Position.swift in Sources */,
+				7557FE8C26597626003F1B34 /* PieceTreeSnapshot.swift in Sources */,
 				752C47DD264DC74100017C7C /* PieceIndex.swift in Sources */,
 				752C47DF264DC76400017C7C /* NodePosition.swift in Sources */,
 				752C47E1264DC7D800017C7C /* BufferCursor.swift in Sources */,
@@ -351,12 +361,14 @@
 				E3A891F92326F736001FA258 /* PieceTreeBase.swift in Sources */,
 				752C47DB264DC71C00017C7C /* StringBuffer.swift in Sources */,
 				757A344C264DBAE700E9EAA3 /* ValidatedEditOperation.swift in Sources */,
-				E3A891FF2326F736001FA258 /* PieceTreeBuilder.swift in Sources */,
+				E3A891FF2326F736001FA258 /* PieceTreeTextBufferBuilder.swift in Sources */,
 				757A3450264DBB0F00E9EAA3 /* IdentifiedSingleEditOperation.swift in Sources */,
 				E3A891FB2326F736001FA258 /* Range.swift in Sources */,
+				7557FE8A265975AF003F1B34 /* PieceTreeTextBufferFactory.swift in Sources */,
 				757A344E264DBAF800E9EAA3 /* SingleEditOperationIdentifier.swift in Sources */,
 				752C47D7264DC6D200017C7C /* LineStarts.swift in Sources */,
 				757A3448264DBAA900E9EAA3 /* ApplyEditsResult.swift in Sources */,
+				7557FE8E26597863003F1B34 /* PieceTreeTextBufferBuilder+Speclialization.swift in Sources */,
 				752C47D9264DC6FE00017C7C /* CacheEntry.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

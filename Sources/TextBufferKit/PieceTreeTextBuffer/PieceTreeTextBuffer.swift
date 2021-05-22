@@ -44,9 +44,9 @@ public class PieceTreeTextBuffer<V: RangeReplaceableCollection & BidirectionalCo
 
 extension PieceTreeTextBuffer where V == [UInt8] {
 
-    convenience init(chunks: inout [StringBuffer<V>], BOM: V, eol: EndOfLine<V>, containsRTL: Bool, isBasicASCII: Bool, eolNormalized: Bool)
+    convenience init(chunks: inout [StringBuffer<V>], BOM: V, eol: EndOfLine<V>, containsRTL: Bool, isBasicASCII: Bool, eolNormalized: Bool, newLine: V.Element, lineFeed: V.Element)
     {
-        let pieceTree = PieceTreeBase(chunks: &chunks, eol: eol, eolNormalized: eolNormalized)
+        let pieceTree = PieceTreeBase(chunks: &chunks, eol: eol, eolNormalized: eolNormalized, newLine: newLine, lineFeed: lineFeed)
         self.init(BOM: BOM, pieceTree: pieceTree, containsRTL: containsRTL, isBasicASCII: isBasicASCII, eolNormalized: eolNormalized)
     }
 

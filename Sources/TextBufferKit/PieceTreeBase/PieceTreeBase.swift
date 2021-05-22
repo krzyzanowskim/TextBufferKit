@@ -32,7 +32,9 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
     var buffers = [StringBuffer<V> (buffer: V(), lineStarts: [])]
     public private(set) var lineCount: Int = 1
     public private(set) var length: Int = 0
-    
+    private let newLine: V.Element  // \n
+    private let lineFeed: V.Element // \r
+
     /// This configuration variable can be used to control how small or large data is chunked in, the default is 64k
     public var averageBufferSize: Int = 64*1024 {
         didSet {
@@ -50,8 +52,10 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
     var searchCache: PieceTreeSearchCache = PieceTreeSearchCache(limit: 1)
     var lastVisitedLine: (lineNumber: Int, value: V) = (0, V())
 
-    init(eol: EndOfLine<V>) {
+    init(eol: EndOfLine<V>, newLine: V.Element, lineFeed: V.Element) {
         _eol = eol
+        self.newLine = newLine
+        self.lineFeed = lineFeed
     }
 
     @discardableResult
@@ -142,9 +146,9 @@ extension PieceTreeBase where V == [UInt8] {
     /// Initializes the PieceTreeBase
     /// - Parameter eol: must be a String either "\n" or "\r\n"
     ///
-    public convenience init (chunks: inout [StringBuffer<V>], eol: EndOfLine<V> = .LF, eolNormalized: Bool)
+    public convenience init (chunks: inout [StringBuffer<V>], eol: EndOfLine<V> = .LF, eolNormalized: Bool, newLine: V.Element, lineFeed: V.Element)
     {
-        self.init(eol: eol)
+        self.init(eol: eol, newLine: newLine, lineFeed: lineFeed)
         create(chunks: &chunks, eol: eol, eolNormalized: eolNormalized)
     }
 
@@ -173,7 +177,7 @@ extension PieceTreeBase where V == [UInt8] {
         while i < top {
             if chunks[i].buffer.count > 0 {
                 if chunks[i].lineStarts.count == 0 {
-                    chunks[i].lineStarts = LineStarts.createLineStartsArray (chunks[i].buffer);
+                    chunks[i].lineStarts = LineStarts.createLineStartsArray (chunks[i].buffer, newLine: newLine, lineFeed: lineFeed);
                 }
 
                 let piece = Piece(bufferIndex: i+1,
@@ -237,7 +241,7 @@ extension PieceTreeBase where V == [UInt8] {
 
             // flush anyways
             let text = replaceNewLines (tempChunk)
-            chunks.append(StringBuffer(buffer: text, lineStarts: LineStarts.createLineStartsArray(text)))
+            chunks.append(StringBuffer(buffer: text, lineStarts: LineStarts.createLineStartsArray(text, newLine: newLine, lineFeed: lineFeed)))
             tempChunk = str
             tempChunkLen = len
             return true
@@ -245,7 +249,7 @@ extension PieceTreeBase where V == [UInt8] {
 
         if (tempChunkLen > 0) {
             let text = replaceNewLines (tempChunk)
-            chunks.append (StringBuffer(buffer: text, lineStarts: LineStarts<V>.createLineStartsArray(text)))
+            chunks.append (StringBuffer(buffer: text, lineStarts: LineStarts<V>.createLineStartsArray(text, newLine: newLine, lineFeed: lineFeed)))
         }
 
         create(chunks: &chunks, eol: eol, eolNormalized: true)
@@ -959,12 +963,12 @@ extension PieceTreeBase where V == [UInt8] {
                     text = text[(start+averageBufferSize)...]
                 }
 
-                let lineStarts = LineStarts.createLineStartsArray(V (splitText))
+                let lineStarts = LineStarts.createLineStartsArray(V (splitText), newLine: newLine, lineFeed: lineFeed)
                 newPieces.append(Piece(bufferIndex: buffers.count, start: BufferCursor(line: 0, column: 0), end: BufferCursor(line: lineStarts.count-1, column: splitText.count - lineStarts[lineStarts.count-1]), length: splitText.count, lineFeedCount: lineStarts.count-1))
                 buffers.append(StringBuffer(buffer: splitText, lineStarts: lineStarts));
             }
 
-            let lineStarts = LineStarts.createLineStartsArray (V(text))
+            let lineStarts = LineStarts.createLineStartsArray (V(text), newLine: newLine, lineFeed: lineFeed)
             newPieces.append(Piece(bufferIndex: buffers.count, start: BufferCursor(line: 0, column: 0), end: BufferCursor(line: lineStarts.count-1, column: text.count - lineStarts[lineStarts.count-1]), length: text.count, lineFeedCount: lineStarts.count-1))
             buffers.append(StringBuffer(buffer: V (text), lineStarts: lineStarts))
 
@@ -972,7 +976,7 @@ extension PieceTreeBase where V == [UInt8] {
         }
 
         var startOffset = buffers[0].buffer.count
-        var lineStarts = LineStarts.createLineStartsArray(_text)
+        var lineStarts = LineStarts.createLineStartsArray(_text, newLine: newLine, lineFeed: lineFeed)
 
         var start = lastChangeBufferPos
         if buffers[0].lineStarts[buffers[0].lineStarts.count - 1] == startOffset
@@ -1190,7 +1194,7 @@ extension PieceTreeBase where V == [UInt8] {
         let hitCRLF = shouldCheckCRLF() && startWithLF(value) && endWithCR(node)
         let startOffset = buffers[0].buffer.count
         buffers[0].buffer += value
-        var lineStarts = LineStarts.createLineStartsArray (value)
+        var lineStarts = LineStarts.createLineStartsArray (value, newLine: newLine, lineFeed: lineFeed)
         for i in 0..<lineStarts.count {
             lineStarts[i] += startOffset
         }
