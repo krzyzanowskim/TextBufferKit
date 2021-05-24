@@ -27,7 +27,7 @@
 // https://github.com/microsoft/vscode/blob/master/src/vs/editor/common/model/pieceTreeTextBuffer/pieceTreeTextBuffer.ts
 import Foundation
 
-public class PieceTreeTextBuffer<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> {
+public class PieceTreeTextBuffer<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Element: Equatable {
     private let pieceTree: PieceTreeBase<V>
     public private(set) var bom: V
     public private(set) var mightContainRTL: Bool
@@ -152,7 +152,7 @@ extension PieceTreeTextBuffer where V == [UInt8] {
 
     /// Returns the contents of the buffer as a byte array
     public func getLinesRawContent() -> V {
-        return pieceTree.getLinesRawContent()
+        return pieceTree.getLines()
     }
     
     /// Returns the contents of the specified line as a byte array
@@ -165,8 +165,8 @@ extension PieceTreeTextBuffer where V == [UInt8] {
     /// - Parameter lineNumber: the line to look up, starting at line 1
     /// - Parameter index: 0-based index to the element to retrieve
     /// - Returns: The byte at the specified position
-    public func getLineCharCode(lineNumber: Int, index: Int) ->  V.Element {
-        return pieceTree.getLineCharCode(lineNumber: lineNumber, index: index)
+    public func getLineCharCode(lineNumber: Int, index col: Int) -> V.Element? {
+        return pieceTree.getLineCharCode(lineNumber: lineNumber, index: col)
     }
 
     /// Returns the number of bytes in the line at `lineNumber`
@@ -610,23 +610,4 @@ extension PieceTreeTextBuffer where V == [UInt8] {
 
         return result
     }
-
-//    func static _sortOpsAscending(a: IValidatedEditOperation, b: IValidatedEditOperation) ->  Int
-//    {
-//        let r = Range.compareRangesUsingEnds(a.range, b.range)
-//        if (r === 0) {
-//            return a.sortIndex - b.sortIndex
-//        }
-//        return r
-//    }
-//
-//    func static _sortOpsDescending(a: IValidatedEditOperation, b: IValidatedEditOperation) ->  Int
-//    {
-//        let r = Range.compareRangesUsingEnds(a.range, b.range)
-//        if (r === 0) {
-//            return b.sortIndex - a.sortIndex
-//        }
-//        return -r
-//    }
-//    #endif
 }

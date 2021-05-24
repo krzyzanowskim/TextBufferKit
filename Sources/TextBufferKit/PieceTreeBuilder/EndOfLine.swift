@@ -26,22 +26,27 @@
 
 import Foundation
 
-public enum EndOfLine<V: RangeReplaceableCollection & BidirectionalCollection & Hashable>: String {
+public enum EndOfLine<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> {
     /**
      * Use line feed (\n) as the end of line character.
      */
-    case LF = "\n"
+    case LF
     /**
      * Use carriage return and line feed (\r\n) as the end of line character.
      */
-    case CRLF = "\r\n"
+    case CRLF
 
-    case CR = "\r"
-
-    // RawRepresentable stub
+    case CR
 
     var stringValue: String {
-        rawValue
+        switch self {
+        case .LF:
+            return "\n"
+        case .CR:
+            return "\r"
+        case .CRLF:
+            return "\r\n"
+        }
     }
 }
 

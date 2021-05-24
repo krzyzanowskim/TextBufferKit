@@ -27,7 +27,7 @@
 
 import Foundation
 
-public class PieceTreeTextBufferFactory<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> {
+public class PieceTreeTextBufferFactory<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Element: Hashable {
     var chunks: [StringBuffer<V>]
     var bom: V
     var cr, lf, crlf: Int
@@ -51,9 +51,7 @@ public class PieceTreeTextBufferFactory<V: RangeReplaceableCollection & Bidirect
         self.newLine = newLine
         self.lineFeed = lineFeed
     }
-}
 
-extension PieceTreeTextBufferFactory where V == [UInt8] {
     //
     // returns an array of either '\r\n' | '\n'
     //
@@ -72,6 +70,17 @@ extension PieceTreeTextBufferFactory where V == [UInt8] {
         // At least one line more ends in \n
         return EndOfLine.LF
     }
+
+
+    public func getFirstLineText(lengthLimit: Int) -> V {
+        let buffer = chunks [chunks.startIndex].buffer
+        return V (buffer [buffer.startIndex..<buffer.index(buffer.startIndex, offsetBy:lengthLimit)])
+        // TODO
+        // return chunks[0].buffer.substr(0, 100).split(/\r\n|\r|\n/)[0];
+    }
+}
+
+extension PieceTreeTextBufferFactory where V == [UInt8] {
 
     public func createPieceTreeBase (_ defaultEOL: EndOfLine<V> = .LF) -> PieceTreeBase<V>
     {
@@ -109,12 +118,5 @@ extension PieceTreeTextBufferFactory where V == [UInt8] {
         }
 
         return PieceTreeTextBuffer(chunks: &chunks, BOM: bom, eol: eol, containsRTL: containsRtl, isBasicASCII: isBasicAscii, eolNormalized: normalizeEol, newLine: newLine, lineFeed: lineFeed)
-    }
-
-
-    public func getFirstLineText(lengthLimit: Int) -> V {
-        return V (chunks [0].buffer [0..<lengthLimit])
-        // TODO
-        // return chunks[0].buffer.substr(0, 100).split(/\r\n|\r|\n/)[0];
     }
 }

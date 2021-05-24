@@ -27,7 +27,7 @@
 
 import Foundation
 
-public struct PieceTreeSnapshot<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> {
+public struct PieceTreeSnapshot<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Element: Equatable {
     var pieces: [Piece]
     var index: Int
     var tree: PieceTreeBase<V>

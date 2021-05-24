@@ -29,7 +29,7 @@ import Foundation
 /**
  * Tracks the offset for each start of a line created from a byte array
  */
-struct LineStarts<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Element: Hashable {
+struct LineStarts<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Element: Equatable {
     /// Offsets for each line start
     public var lineStarts: [V.Index] = []
     /// Number of carriage returns found
