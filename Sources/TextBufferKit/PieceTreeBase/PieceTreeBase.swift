@@ -707,7 +707,7 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
     }
 
     private func replaceNewLines (_ val: V) -> V {
-        fatalError()
+        fatalError("Not implemented")
     }
 
     private func normalizeEol ()
@@ -832,28 +832,46 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
 
         return ret
     }
-}
 
-extension PieceTreeBase where V == [UInt8] {
-
-    private func validateCRLFWithPrevNode(nextNode: inout TreeNode)
-    {
-        if shouldCheckCRLF() && startWithLF(nextNode) {
-            var node = nextNode.prev()
-            if endWithCR(node) {
-                fixCRLF(prev: &node, next: &nextNode)
-            }
-        }
-    }
-    
     /// Splits a buffer containing the whole text in lines,
     /// where lines are those with \r\n, \r or \n
-    static func splitBufferInLines (_ contents: V) -> [V]
+    static func splitBufferInLines (_ contents: V) -> [V] where V == String
     {
+        guard !contents.isEmpty else {
+            return []
+        }
+
+        var result: [V] = [V()]
+        var line = V()
+        for c in contents {
+            switch c {
+            case "\r\n", "\n", "\r":
+                result.append(line)
+                line = V()
+            default:
+                line.append(c)
+            }
+        }
+
+        if !line.isEmpty {
+            result.append(line)
+        }
+
+        return result
+    }
+
+    /// Splits a buffer containing the whole text in lines,
+    /// where lines are those with \r\n, \r or \n
+    static func splitBufferInLines (_ contents: V) -> [V] where V == [UInt8]
+    {
+        guard !contents.isEmpty else {
+            return []
+        }
+
         var result: [V] = [V()]
         var i = 0
         var line: V = V()
-        
+
         let top = contents.count
         while i < top {
             let c = contents [i]
@@ -876,12 +894,28 @@ extension PieceTreeBase where V == [UInt8] {
         }
         return result
     }
-    
+
+    static func splitBufferInLines (_ contents: V) -> [V] {
+        fatalError("Not implemented")
+    }
+
     public func getLinesContent() -> [V]
     {
         return Self.splitBufferInLines (getContentOfSubTree(node: root))
     }
-    
+}
+
+extension PieceTreeBase where V == [UInt8] {
+
+    private func validateCRLFWithPrevNode(nextNode: inout TreeNode)
+    {
+        if shouldCheckCRLF() && startWithLF(nextNode) {
+            var node = nextNode.prev()
+            if endWithCR(node) {
+                fixCRLF(prev: &node, next: &nextNode)
+            }
+        }
+    }
     
     public func getLineContent(_ lineNumber: Int) -> V {
         if lastVisitedLine.lineNumber == lineNumber {
