@@ -38,7 +38,7 @@ public enum EndOfLine<V: RangeReplaceableCollection & BidirectionalCollection & 
 
     case CR
 
-    var stringValue: String {
+    fileprivate var stringValue: String {
         switch self {
         case .LF:
             return "\n"
@@ -46,6 +46,15 @@ public enum EndOfLine<V: RangeReplaceableCollection & BidirectionalCollection & 
             return "\r"
         case .CRLF:
             return "\r\n"
+        }
+    }
+
+    var length: Int {
+        switch self {
+        case .LF, .CR:
+            return 1
+        case .CRLF:
+            return 2
         }
     }
 }

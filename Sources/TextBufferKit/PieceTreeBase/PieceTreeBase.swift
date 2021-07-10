@@ -44,9 +44,8 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
         }
     }
     
-    var _eol: EndOfLine<V>
+    private var _eol: EndOfLine<V> = .LF
 
-    var eolLength: Int = 1
     var eolNormalized: Bool = true
     var lastChangeBufferPos: BufferCursor = BufferCursor(line: 0, column: 0)
     var searchCache: PieceTreeSearchCache = PieceTreeSearchCache(limit: 1)
@@ -575,7 +574,7 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
             let startOffset = getOffsetAt(lineNumber, 1)
             return length - startOffset
         }
-        return getOffsetAt(lineNumber + 1, 1) - getOffsetAt(lineNumber, 1) - eolLength
+        return getOffsetAt(lineNumber + 1, 1) - getOffsetAt(lineNumber, 1) - _eol.length
     }
 
     public func getLineCharCode(lineNumber: Int, index col: Int) -> V.Element?
@@ -601,6 +600,51 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
             return buffer.buffer [targetOffset]
         }
     }
+
+    func create (chunks: inout [StringBuffer<V>], eol: EndOfLine<V>, eolNormalized: Bool)
+    {
+        let buffer = V()
+        self.buffers = [StringBuffer<V>(buffer: buffer, lineStarts: [buffer.startIndex])]
+        self.lineCount = 1
+        self.length = 0
+        self._eol = eol
+        self.eolNormalized = eolNormalized
+
+        var lastNode: TreeNode? = nil
+        var i = 0
+        let top = chunks.count
+        while i < top {
+            if chunks[i].buffer.count > 0 {
+                if chunks[i].lineStarts.count == 0 {
+                    chunks[i].lineStarts = LineStarts.createLineStartsArray (chunks[i].buffer, newLine: newLine, lineFeed: lineFeed);
+                }
+
+                let lastLineIndex = chunks[i].lineStarts.count - 1
+                let lastLineStartIndex = chunks[i].lineStarts[lastLineIndex]
+                let endColumnIndex = chunks[i].buffer.distance(from: chunks[i].buffer.startIndex, to: lastLineStartIndex)
+
+                let piece = Piece(
+                    bufferIndex: i + 1,
+                    start: BufferCursor(line: 0, column: 0),
+                    end: BufferCursor(line: lastLineIndex, column: endColumnIndex),
+                    length: chunks[i].buffer.count,
+                    lineFeedCount: chunks[i].lineStarts.count - 1
+                )
+
+                // let piece = Piece(bufferIndex: i+1,
+                //                   start: BufferCursor(line: 0, column: 0),
+                //                   end: BufferCursor(line: chunks[i].lineStarts.count - 1, column: chunks[i].buffer.count - chunks[i].lineStarts[chunks[i].lineStarts.count - 1]),
+                //                   length: chunks[i].buffer.count, lineFeedCount: chunks[i].lineStarts.count - 1)
+
+                buffers.append (chunks[i]);
+                lastNode = rbInsertRight (lastNode, piece)
+            }
+            i += 1
+        }
+        searchCache = PieceTreeSearchCache(limit: 1)
+        lastVisitedLine = (0, V())
+        computeBufferMetadata()
+    }
 }
 
 extension PieceTreeBase where V == [UInt8] {
@@ -614,7 +658,7 @@ extension PieceTreeBase where V == [UInt8] {
         create(chunks: &chunks, eol: eol, eolNormalized: eolNormalized)
     }
 
-    public var eol: EndOfLine<V> {
+    var eol: EndOfLine<V> {
         get {
             return _eol
         }
@@ -624,7 +668,7 @@ extension PieceTreeBase where V == [UInt8] {
         }
     }
 
-    func validateCRLFWithPrevNode(nextNode: inout TreeNode)
+    private func validateCRLFWithPrevNode(nextNode: inout TreeNode)
     {
         if shouldCheckCRLF() && startWithLF(nextNode) {
             var node = nextNode.prev()
@@ -633,42 +677,9 @@ extension PieceTreeBase where V == [UInt8] {
             }
         }
     }
-
-    func create (chunks: inout [StringBuffer<V>], eol: EndOfLine<V>, eolNormalized: Bool)
-    {
-        buffers = [StringBuffer<V>(buffer: V(), lineStarts: [0])]
-        lineCount = 1
-        length = 0
-        self._eol = eol
-        self.eolLength = (eol.rawValue as V).count
-        self.eolNormalized = eolNormalized
-        
-        var lastNode: TreeNode? = nil
-        var i = 0
-        let top = chunks.count
-        while i < top {
-            if chunks[i].buffer.count > 0 {
-                if chunks[i].lineStarts.count == 0 {
-                    chunks[i].lineStarts = LineStarts.createLineStartsArray (chunks[i].buffer, newLine: newLine, lineFeed: lineFeed);
-                }
-
-                let piece = Piece(bufferIndex: i+1,
-                                  start: BufferCursor(line: 0, column: 0),
-                                  end: BufferCursor(line: chunks[i].lineStarts.count - 1, column: chunks[i].buffer.count - chunks[i].lineStarts[chunks[i].lineStarts.count - 1]),
-                                  length: chunks[i].buffer.count, lineFeedCount: chunks[i].lineStarts.count - 1)
-                
-                buffers.append (chunks[i]);
-                lastNode = rbInsertRight (lastNode, piece)
-            }
-            i += 1
-        }
-        searchCache = PieceTreeSearchCache(limit: 1)
-        lastVisitedLine = (0, V())
-        computeBufferMetadata()
-    }
     
     // Replaces \r\n, \r and \n with the value of eol
-    func replaceNewLines (_ val: V) -> V
+    private func replaceNewLines (_ val: V) -> V
     {
         var result = V()
         let len = val.count
@@ -692,7 +703,7 @@ extension PieceTreeBase where V == [UInt8] {
         return result
     }
     
-    func normalizeEol ()
+    private func normalizeEol ()
     {
         let averageBufferSize = self.averageBufferSize
         let min = Int (Float (averageBufferSize) - floor(Float (averageBufferSize / 3)))
@@ -862,7 +873,7 @@ extension PieceTreeBase where V == [UInt8] {
         if lineNumber == lineCount {
             lastVisitedLine.value = getLineRawContent(lineNumber)
         } else if eolNormalized {
-            lastVisitedLine.value = getLineRawContent (lineNumber, eolLength)
+            lastVisitedLine.value = getLineRawContent (lineNumber, eol.length)
         } else {
             var l = getLineRawContent(lineNumber)
             let len = l.count

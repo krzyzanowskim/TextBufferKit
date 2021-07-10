@@ -53,7 +53,7 @@ public class PieceTreeTextBufferFactory<V: RangeReplaceableCollection & Bidirect
     }
 
     //
-    // returns an array of either '\r\n' | '\n'
+    // returns an EOL indicator (either '\r\n' | '\n')
     //
     func getEOL(_ defaultEOL: EndOfLine<V>) -> EndOfLine<V> {
         let totalEOLCount = cr + lf + crlf
