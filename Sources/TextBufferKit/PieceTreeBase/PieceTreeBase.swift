@@ -29,7 +29,7 @@ import Foundation
 
 public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Element: Equatable {
     var root: TreeNode = TreeNode.SENTINEL
-    var buffers = [StringBuffer<V> (buffer: V(), lineStarts: [])]
+    private var buffers = [StringBuffer<V> (buffer: V(), lineStarts: [])]
     public private(set) var lineCount: Int = 1
     public private(set) var length: Int = 0
     private let newLine: V.Element  // \n
@@ -46,15 +46,35 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
     
     private var _eol: EndOfLine<V> = .LF
 
-    var eolNormalized: Bool = true
-    var lastChangeBufferPos: BufferCursor = BufferCursor(line: 0, column: 0)
-    var searchCache: PieceTreeSearchCache = PieceTreeSearchCache(limit: 1)
-    var lastVisitedLine: (lineNumber: Int, value: V) = (0, V())
+    private var eolNormalized: Bool
+    private var lastChangeBufferPos: BufferCursor = BufferCursor(line: 0, column: 0)
+    private var searchCache: PieceTreeSearchCache = PieceTreeSearchCache(limit: 1)
+    private var lastVisitedLine: (lineNumber: Int, value: V) = (0, V())
 
-    init(eol: EndOfLine<V>, newLine: V.Element, lineFeed: V.Element) {
-        _eol = eol
+    var eol: EndOfLine<V> {
+        get {
+            return _eol
+        }
+        set {
+            _eol = newValue
+            normalizeEol()
+        }
+    }
+
+    init(eol: EndOfLine<V>, eolNormalized: Bool, newLine: V.Element, lineFeed: V.Element) {
+        self._eol = eol
+        self.eolNormalized = eolNormalized
         self.newLine = newLine
         self.lineFeed = lineFeed
+    }
+
+    /// Initializes the PieceTreeBase
+    /// - Parameter eol: must be a String either "\n" or "\r\n"
+    ///
+    public convenience init (chunks: inout [StringBuffer<V>], eol: EndOfLine<V> = .LF, eolNormalized: Bool, newLine: V.Element, lineFeed: V.Element)
+    {
+        self.init(eol: eol, eolNormalized: eolNormalized, newLine: newLine, lineFeed: lineFeed)
+        create(chunks: &chunks, eol: eol, eolNormalized: eolNormalized)
     }
 
     @discardableResult
@@ -645,41 +665,24 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
         lastVisitedLine = (0, V())
         computeBufferMetadata()
     }
-}
 
-extension PieceTreeBase where V == [UInt8] {
-
-    /// Initializes the PieceTreeBase
-    /// - Parameter eol: must be a String either "\n" or "\r\n"
-    ///
-    public convenience init (chunks: inout [StringBuffer<V>], eol: EndOfLine<V> = .LF, eolNormalized: Bool, newLine: V.Element, lineFeed: V.Element)
+    // Replaces \r\n, \r and \n with the value of eol
+    private func replaceNewLines (_ val: V) -> V where V == String
     {
-        self.init(eol: eol, newLine: newLine, lineFeed: lineFeed)
-        create(chunks: &chunks, eol: eol, eolNormalized: eolNormalized)
-    }
-
-    var eol: EndOfLine<V> {
-        get {
-            return _eol
-        }
-        set {
-            _eol = newValue
-            normalizeEol()
-        }
-    }
-
-    private func validateCRLFWithPrevNode(nextNode: inout TreeNode)
-    {
-        if shouldCheckCRLF() && startWithLF(nextNode) {
-            var node = nextNode.prev()
-            if endWithCR(node) {
-                fixCRLF(prev: &node, next: &nextNode)
+        let result = val.map { v -> Character in
+            switch v {
+            case "\r\n", "\n", "\r":
+                return Character(_eol.rawValue)
+            default:
+                return v
             }
         }
+
+        return V(result)
     }
-    
+
     // Replaces \r\n, \r and \n with the value of eol
-    private func replaceNewLines (_ val: V) -> V
+    private func replaceNewLines (_ val: V) -> V where V == [UInt8]
     {
         var result = V()
         let len = val.count
@@ -696,13 +699,17 @@ extension PieceTreeBase where V == [UInt8] {
             } else if v == 10 {
                 result.append (contentsOf: eol.rawValue)
             } else {
-                result.append (val [i])
+                result.append (v)
             }
             i += 1
         }
         return result
     }
-    
+
+    private func replaceNewLines (_ val: V) -> V {
+        fatalError()
+    }
+
     private func normalizeEol ()
     {
         let averageBufferSize = self.averageBufferSize
@@ -735,9 +742,9 @@ extension PieceTreeBase where V == [UInt8] {
             chunks.append (StringBuffer(buffer: text, lineStarts: LineStarts<V>.createLineStartsArray(text, newLine: newLine, lineFeed: lineFeed)))
         }
 
-        create(chunks: &chunks, eol: eol, eolNormalized: true)
+        create(chunks: &chunks, eol: _eol, eolNormalized: true)
     }
-    
+
     public static func equal (left: PieceTreeBase, right: PieceTreeBase) -> Bool
     {
         if left.length != right.length {
@@ -746,7 +753,7 @@ extension PieceTreeBase where V == [UInt8] {
         if left.lineCount != right.lineCount {
             return false
         }
-    
+
         let ret = left.iterate(node: left.root, callback: { node in
             if node === TreeNode.SENTINEL {
                 return true
@@ -763,7 +770,7 @@ extension PieceTreeBase where V == [UInt8] {
             return false
         })
 
-        return ret;
+        return ret
     }
 
     public func getValueInRange(range: Range<V>, eol _eol: V? = nil) -> V {
@@ -774,20 +781,20 @@ extension PieceTreeBase where V == [UInt8] {
         if let startPosition = nodeAt2(line: range.startLineNumber, col: range.startColumn) {
             if let endPosition = nodeAt2(line: range.endLineNumber, col: range.endColumn) {
                 let value = getValueInRange2(startPosition, endPosition)
-            
+
                 if _eol != nil {
-                     if (eol != self.eol || !eolNormalized) {
-                    
-                         return replaceNewLines(value)
-                     }
-                    
+                    if (eol != self.eol || !eolNormalized) {
+
+                        return replaceNewLines(value)
+                    }
+
                     if (eol == self.eol && eolNormalized) {
-                         if (eol == .CRLF) {
-                    
-                         }
-                         return value;
-                     }
-                     return replaceNewLines (value)
+                        if (eol == .CRLF) {
+
+                        }
+                        return value;
+                    }
+                    return replaceNewLines (value)
                 }
                 return value
             }
@@ -824,6 +831,21 @@ extension PieceTreeBase where V == [UInt8] {
         }
 
         return ret
+    }
+}
+
+extension PieceTreeBase where V == [UInt8] {
+
+
+
+    private func validateCRLFWithPrevNode(nextNode: inout TreeNode)
+    {
+        if shouldCheckCRLF() && startWithLF(nextNode) {
+            var node = nextNode.prev()
+            if endWithCR(node) {
+                fixCRLF(prev: &node, next: &nextNode)
+            }
+        }
     }
     
     /// Splits a buffer containing the whole text in lines,
@@ -1260,7 +1282,7 @@ extension PieceTreeBase where V == [UInt8] {
         deleteNodes(nodesToDel)
     }
     
-    func insertContentToNodeRight(value: inout V, node: TreeNode)
+    private func insertContentToNodeRight(value: inout V, node: TreeNode)
     {
         if adjustCarriageReturnFromNext(value: &value, node: node) {
             // move \n to the new node.
@@ -1279,9 +1301,9 @@ extension PieceTreeBase where V == [UInt8] {
     }
 
     
-    func createNewPieces(_ _text: V) -> [Piece]
+    private func createNewPieces(_ _text: V) -> [Piece]
     {
-        var text = _text[0..<_text.count]
+        var text = _text[...]
         
         if text.count > averageBufferSize {
             // the content is large, operations like subString, charCode becomes slow
@@ -1314,7 +1336,9 @@ extension PieceTreeBase where V == [UInt8] {
             return newPieces
         }
 
-        var startOffset = buffers[0].buffer.count
+        guard var startOffset = buffers.first?.buffer.count else {
+            return []
+        }
         var lineStarts = LineStarts.createLineStartsArray(_text, newLine: newLine, lineFeed: lineFeed)
 
         var start = lastChangeBufferPos
@@ -1535,7 +1559,7 @@ extension PieceTreeBase where V == [UInt8] {
         }
     }
     
-    func adjustCarriageReturnFromNext(value: inout V, node: TreeNode) -> Bool {
+    private func adjustCarriageReturnFromNext(value: inout V, node: TreeNode) -> Bool {
         if shouldCheckCRLF() && endWithCR(value) {
             let nextNode = node.next()
             if startWithLF(nextNode) {

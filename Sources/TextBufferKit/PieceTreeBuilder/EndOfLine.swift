@@ -49,6 +49,7 @@ public enum EndOfLine<V: RangeReplaceableCollection & BidirectionalCollection & 
         }
     }
 
+    // It's a coincidence this is true for unicode and string, but not necessarily for everything else.
     var length: Int {
         switch self {
         case .LF, .CR:
@@ -73,7 +74,7 @@ extension EndOfLine where V == [UInt8] {
         }
     }
 
-    public var rawValue: [UInt8] {
+    public var rawValue: V {
         switch self {
         case .CRLF:
             return stringValue.unicodeScalars.map { UInt8($0.value) }
@@ -86,7 +87,7 @@ extension EndOfLine where V == [UInt8] {
 }
 
 extension EndOfLine where V == String {
-    public init?(rawValue: String) {
+    public init?(rawValue: V) {
         switch rawValue {
         case EndOfLine.CRLF.stringValue:
             self = .CRLF
@@ -99,7 +100,7 @@ extension EndOfLine where V == String {
         }
     }
 
-    public var rawValue: String {
+    public var rawValue: V {
         switch self {
         case .CRLF:
             return stringValue
@@ -110,3 +111,4 @@ extension EndOfLine where V == String {
         }
     }
 }
+
