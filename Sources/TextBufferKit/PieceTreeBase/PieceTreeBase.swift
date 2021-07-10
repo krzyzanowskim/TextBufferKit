@@ -51,16 +51,6 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
     private var searchCache: PieceTreeSearchCache = PieceTreeSearchCache(limit: 1)
     private var lastVisitedLine: (lineNumber: Int, value: V) = (0, V())
 
-    var eol: EndOfLine<V> {
-        get {
-            return _eol
-        }
-        set {
-            _eol = newValue
-            normalizeEol()
-        }
-    }
-
     init(eol: EndOfLine<V>, eolNormalized: Bool, newLine: V.Element, lineFeed: V.Element) {
         self._eol = eol
         self.eolNormalized = eolNormalized
@@ -137,7 +127,7 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
         return leftLen
     }
 
-    func getAccumulatedValue(node: TreeNode, index: Int) -> Int {
+    func getAccumulatedValue(node: TreeNode, index: Int) -> Int { // V.IndexDistance
         guard index >= 0 else {
             return 0
         }
@@ -706,11 +696,11 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
         return result
     }
 
-    private func replaceNewLines (_ val: V) -> V {
-        fatalError("Not implemented")
-    }
+//    private func replaceNewLines (_ val: V) -> V {
+//        fatalError("Not implemented")
+//    }
 
-    private func normalizeEol ()
+    private func normalizeEol () where V == [UInt8]
     {
         let averageBufferSize = self.averageBufferSize
         let min = Int (Float (averageBufferSize) - floor(Float (averageBufferSize / 3)))
@@ -773,7 +763,7 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
         return ret
     }
 
-    public func getValueInRange(range: Range<V>, eol _eol: V? = nil) -> V {
+    public func getValueInRange(range: Range<V>, eol _eol: V? = nil) -> V where V == [UInt8] {
         if range.startLineNumber == range.endLineNumber && range.startColumn == range.endColumn {
             return V()
         }
@@ -903,9 +893,100 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
     {
         return Self.splitBufferInLines (getContentOfSubTree(node: root))
     }
+
+    private func getLineRawContent(_ _lineNumber: Int, _ endOffset: Int) -> V
+    {
+        var lineNumber = _lineNumber
+        var x = root
+
+        var ret: V = V()
+
+        if let cache = searchCache.get2(lineNumber: lineNumber) {
+            x = cache.node
+            let prevAccumulatedValue = getAccumulatedValue(node: x, index: lineNumber - (cache.nodeStartLineNumber ?? 0) - 1)
+            let buffer = buffers[x.piece.bufferIndex].buffer
+
+            // not used
+            // let startOffset = offsetInBuffer(x.piece.bufferIndex, x.piece.start)
+
+            if (cache.nodeStartLineNumber ?? 0) + x.piece.lineFeedCount == lineNumber {
+                let rangeStart = offsetInBuffer(x.piece.bufferIndex, BufferCursor(line: x.piece.start.line, column: x.piece.start.column + prevAccumulatedValue))
+                let rangeEnd = offsetInBuffer(x.piece.bufferIndex, BufferCursor(line: x.piece.start.line, column: x.piece.start.column + x.piece.length))
+                ret = V (buffer [rangeStart..<rangeEnd])
+            } else {
+                let accumulatedValue = getAccumulatedValue(node: x, index: lineNumber - (cache.nodeStartLineNumber ?? 0))
+                let rangeStart = offsetInBuffer(x.piece.bufferIndex, BufferCursor(line: x.piece.start.line, column: x.piece.start.column + prevAccumulatedValue))
+                let rangeEnd = offsetInBuffer(x.piece.bufferIndex, BufferCursor(line: x.piece.start.line, column: x.piece.start.column + accumulatedValue - endOffset))
+                return V (buffer [rangeStart..<rangeEnd])
+            }
+        } else {
+            var nodeStartOffset = 0
+            let originalLineNumber = lineNumber
+            while x !== TreeNode.SENTINEL {
+                if x.left !== TreeNode.SENTINEL && x.lf_left >= lineNumber - 1 {
+                    x = x.left!
+                } else if x.lf_left + x.piece.lineFeedCount > lineNumber - 1 {
+                    let prevAccumulatedValue = getAccumulatedValue(node: x, index: lineNumber - x.lf_left - 2)
+                    let accumulatedValue = getAccumulatedValue(node: x, index: lineNumber - x.lf_left - 1)
+                    let buffer = buffers[x.piece.bufferIndex].buffer
+
+                    nodeStartOffset += x.size_left
+                    searchCache.set(CacheEntry(node: x, nodeStartLineNumber: originalLineNumber - (lineNumber - 1 - x.lf_left), nodeStartOffset: nodeStartOffset))
+
+                    let rangeStart = offsetInBuffer(x.piece.bufferIndex, BufferCursor(line: x.piece.start.line, column: x.piece.start.column + prevAccumulatedValue))
+                    let rangeEnd = offsetInBuffer(x.piece.bufferIndex, BufferCursor(line: x.piece.start.line, column: x.piece.start.column + accumulatedValue - endOffset))
+                    return V (buffer[rangeStart..<rangeEnd])
+                } else if x.lf_left + x.piece.lineFeedCount == lineNumber - 1 {
+                    let prevAccumulatedValue = getAccumulatedValue(node: x, index: lineNumber - x.lf_left - 2)
+                    let buffer = buffers[x.piece.bufferIndex].buffer
+
+                    let rangeStart = offsetInBuffer(x.piece.bufferIndex, BufferCursor(line: x.piece.start.line, column: x.piece.start.column + prevAccumulatedValue))
+                    let rangeEnd = offsetInBuffer(x.piece.bufferIndex, BufferCursor(line: x.piece.start.line, column: x.piece.start.column + x.piece.length))
+
+                    ret = V (buffer[rangeStart..<rangeEnd])
+                    break;
+                } else {
+                    lineNumber -= x.lf_left + x.piece.lineFeedCount
+                    nodeStartOffset += x.size_left + x.piece.length
+                    x = x.right!
+                }
+            }
+        }
+        // search in order, to find the node contains end column
+        x = x.next()
+        while x !== TreeNode.SENTINEL {
+            let buffer = buffers[x.piece.bufferIndex].buffer
+
+            if x.piece.lineFeedCount > 0 {
+                let accumulatedValue = getAccumulatedValue(node: x, index: 0)
+                let rangeStart = offsetInBuffer(x.piece.bufferIndex, x.piece.start)
+                let rangeEnd = offsetInBuffer(x.piece.bufferIndex, BufferCursor(line: x.piece.start.line, column: x.piece.start.column + accumulatedValue - endOffset))
+                ret += V (buffer[rangeStart..<rangeEnd])
+                return ret
+            } else {
+                let rangeStart = offsetInBuffer(x.piece.bufferIndex, x.piece.start)
+                let rangeEnd = offsetInBuffer(x.piece.bufferIndex, BufferCursor(line: x.piece.start.line, column: x.piece.start.column + x.piece.length))
+                ret += V (buffer [rangeStart..<rangeEnd])
+            }
+
+            x = x.next()
+        }
+
+        return ret
+    }
 }
 
 extension PieceTreeBase where V == [UInt8] {
+
+    var eol: EndOfLine<V> {
+        get {
+            return _eol
+        }
+        set {
+            _eol = newValue
+            normalizeEol()
+        }
+    }
 
     private func validateCRLFWithPrevNode(nextNode: inout TreeNode)
     {
@@ -916,7 +997,7 @@ extension PieceTreeBase where V == [UInt8] {
             }
         }
     }
-    
+
     public func getLineContent(_ lineNumber: Int) -> V {
         if lastVisitedLine.lineNumber == lineNumber {
             return lastVisitedLine.value
@@ -925,11 +1006,11 @@ extension PieceTreeBase where V == [UInt8] {
         lastVisitedLine.lineNumber = lineNumber
 
         if lineNumber == lineCount {
-            lastVisitedLine.value = getLineRawContent(lineNumber)
+            lastVisitedLine.value = getLineRawContent(lineNumber, 0)
         } else if eolNormalized {
             lastVisitedLine.value = getLineRawContent (lineNumber, eol.length)
         } else {
-            var l = getLineRawContent(lineNumber)
+            var l = getLineRawContent(lineNumber, 0)
             let len = l.count
             if len >= 1 {
                 if len >= 2 && l [len-2] == 13 && l [len-1] == 10 {
@@ -939,14 +1020,12 @@ extension PieceTreeBase where V == [UInt8] {
                 }
             }
             lastVisitedLine.value = l
-            
+
             // lastVisitedLine.value = getLineRawContent(lineNumber).replace(/(\r\n|\r|\n)$/, '');
         }
 
         return lastVisitedLine.value
     }
-    
-
     
 //    public func findMatchesInNode(node: TreeNode, searcher: Searcher, startLineNumber: Int, startColumn: Int, startCursor: BufferCursor, endCursor: BufferCursor, searchData: SearchData, captureMatches: Bool, limitResultCount: Int, resultLen _resultLen: Int, _result: inout [FindMatch]) -> Int{
 //        var resultLen = _resultLen
@@ -1408,73 +1487,7 @@ extension PieceTreeBase where V == [UInt8] {
         return [newPiece]
     }
 
-    private func getLineRawContent(_ _lineNumber: Int, _ endOffset: Int = 0) -> V
-    {
-        var lineNumber = _lineNumber
-        var x = root
 
-        var ret: V = V()
-
-        if let cache = searchCache.get2(lineNumber: lineNumber) {
-            x = cache.node
-            let prevAccumualtedValue = getAccumulatedValue(node: x, index: lineNumber - (cache.nodeStartLineNumber ?? 0) - 1)
-            let buffer = buffers[x.piece.bufferIndex].buffer
-            let startOffset = offsetInBuffer(x.piece.bufferIndex, x.piece.start)
-            if (cache.nodeStartLineNumber ?? 0) + x.piece.lineFeedCount == lineNumber {
-                ret = V (buffer [(startOffset+prevAccumualtedValue)..<(startOffset + x.piece.length)])
-            } else {
-                let accumualtedValue = getAccumulatedValue(node: x, index: lineNumber - (cache.nodeStartLineNumber ?? 0))
-                return V (buffer [(startOffset + prevAccumualtedValue)..<(startOffset + accumualtedValue - endOffset)])
-            }
-        } else {
-            var nodeStartOffset = 0
-            let originalLineNumber = lineNumber
-            while x !== TreeNode.SENTINEL {
-                if x.left !== TreeNode.SENTINEL && x.lf_left >= lineNumber - 1 {
-                    x = x.left!
-                } else if x.lf_left + x.piece.lineFeedCount > lineNumber - 1 {
-                    let prevAccumualtedValue = getAccumulatedValue(node: x, index: lineNumber - x.lf_left - 2)
-                    let accumualtedValue = getAccumulatedValue(node: x, index: lineNumber - x.lf_left - 1)
-                    let buffer = buffers[x.piece.bufferIndex].buffer
-                    let startOffset = offsetInBuffer(x.piece.bufferIndex, x.piece.start)
-                    nodeStartOffset += x.size_left
-                    searchCache.set(CacheEntry(node: x, nodeStartLineNumber: originalLineNumber - (lineNumber - 1 - x.lf_left), nodeStartOffset: nodeStartOffset))
-                    return V (buffer[(startOffset + prevAccumualtedValue)..<(startOffset + accumualtedValue - endOffset)])
-                } else if x.lf_left + x.piece.lineFeedCount == lineNumber - 1 {
-                    let prevAccumualtedValue = getAccumulatedValue(node: x, index: lineNumber - x.lf_left - 2)
-                    let buffer = buffers[x.piece.bufferIndex].buffer
-                    let startOffset = offsetInBuffer(x.piece.bufferIndex, x.piece.start)
-
-                    ret = V (buffer[(startOffset + prevAccumualtedValue)..<(startOffset + x.piece.length)])
-                    break;
-                } else {
-                    lineNumber -= x.lf_left + x.piece.lineFeedCount
-                    nodeStartOffset += x.size_left + x.piece.length
-                    x = x.right!
-                }
-            }
-        }
-        // search in order, to find the node contains end column
-        x = x.next()
-        while x !== TreeNode.SENTINEL {
-            let buffer = buffers[x.piece.bufferIndex].buffer
-
-            if x.piece.lineFeedCount > 0 {
-                let accumualtedValue = getAccumulatedValue(node: x, index: 0)
-                let startOffset = offsetInBuffer(x.piece.bufferIndex, x.piece.start)
-
-                ret += V (buffer[startOffset..<(startOffset + accumualtedValue - endOffset)])
-                return ret
-            } else {
-                let startOffset = offsetInBuffer(x.piece.bufferIndex, x.piece.start)
-                ret += V (buffer [startOffset..<(startOffset+x.piece.length)])
-            }
-
-            x = x.next()
-        }
-
-        return ret
-    }
 
     
     private func shrinkNode(node: inout TreeNode, start: BufferCursor, end: BufferCursor)
