@@ -836,8 +836,6 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
 
 extension PieceTreeBase where V == [UInt8] {
 
-
-
     private func validateCRLFWithPrevNode(nextNode: inout TreeNode)
     {
         if shouldCheckCRLF() && startWithLF(nextNode) {
@@ -850,7 +848,7 @@ extension PieceTreeBase where V == [UInt8] {
     
     /// Splits a buffer containing the whole text in lines,
     /// where lines are those with \r\n, \r or \n
-    public static func splitBufferInLines (_ contents: V) -> [V]
+    static func splitBufferInLines (_ contents: V) -> [V]
     {
         var result: [V] = [V()]
         var i = 0
@@ -1062,7 +1060,7 @@ extension PieceTreeBase where V == [UInt8] {
 //        return resultLen;
 //    }
 //
-    func insert(_ offset: Int, _ value: String, eolNormalized: Bool = false)
+    private func insert(_ offset: Int, _ value: String, eolNormalized: Bool = false)
     {
         insert (offset, V(value.utf8))
     }
@@ -1250,7 +1248,7 @@ extension PieceTreeBase where V == [UInt8] {
         computeBufferMetadata()
     }
     
-    func insertContentToNodeLeft(value: inout V, node: inout TreeNode)
+    private func insertContentToNodeLeft(value: inout V, node: inout TreeNode)
     {
         // we are inserting content to the beginning of node
         var nodesToDel: [TreeNode] = []
@@ -1376,7 +1374,7 @@ extension PieceTreeBase where V == [UInt8] {
         return [newPiece]
     }
 
-    func getLineRawContent(_ _lineNumber: Int, _ endOffset: Int = 0) -> V
+    private func getLineRawContent(_ _lineNumber: Int, _ endOffset: Int = 0) -> V
     {
         var lineNumber = _lineNumber
         var x = root
@@ -1445,7 +1443,7 @@ extension PieceTreeBase where V == [UInt8] {
     }
 
     
-    func shrinkNode(node: inout TreeNode, start: BufferCursor, end: BufferCursor)
+    private func shrinkNode(node: inout TreeNode, start: BufferCursor, end: BufferCursor)
     {
         let piece = node.piece
         let originalStartPos = piece.start
@@ -1469,7 +1467,7 @@ extension PieceTreeBase where V == [UInt8] {
         validateCRLFWithPrevNode(nextNode: &newNode)
     }
     
-    func appendToNode(node: inout TreeNode, value: inout V) {
+    private func appendToNode(node: inout TreeNode, value: inout V) {
         if adjustCarriageReturnFromNext(value: &value, node: node) {
             // In Swift, we mutated this copy of value
             // value += [10]
@@ -1504,7 +1502,7 @@ extension PieceTreeBase where V == [UInt8] {
         updateTreeMetadata(self, node, value.count, lf_delta)
     }
     
-    func validateCRLFWithNextNode(node: inout TreeNode)
+    private func validateCRLFWithNextNode(node: inout TreeNode)
     {
         if shouldCheckCRLF() && endWithCR(node) {
             var nextNode = node.next()
@@ -1514,7 +1512,7 @@ extension PieceTreeBase where V == [UInt8] {
         }
     }
 
-    func fixCRLF(prev: inout TreeNode, next: inout TreeNode)
+    private func fixCRLF(prev: inout TreeNode, next: inout TreeNode)
     {
         var nodesToDel: [TreeNode] = []
         // update node
