@@ -36,18 +36,8 @@ public enum EndOfLine<V: RangeReplaceableCollection & BidirectionalCollection & 
      */
     case CRLF
 
+    // Carriage return
     case CR
-
-    fileprivate var stringValue: String {
-        switch self {
-        case .LF:
-            return "\n"
-        case .CR:
-            return "\r"
-        case .CRLF:
-            return "\r\n"
-        }
-    }
 
     // It's a coincidence this is true for unicode and string, but not necessarily for everything else.
     var length: Int {
@@ -62,12 +52,12 @@ public enum EndOfLine<V: RangeReplaceableCollection & BidirectionalCollection & 
 
 extension EndOfLine where V == [UInt8] {
     public init?(rawValue: [UInt8]) {
-        switch String(decoding: rawValue, as: UTF8.self) {
-        case EndOfLine.CRLF.stringValue:
+        switch rawValue {
+        case [13, 10]:
             self = .CRLF
-        case EndOfLine.LF.stringValue:
+        case [10]:
             self = .LF
-        case EndOfLine.CR.stringValue:
+        case [13]:
             self = .CR
         default:
             return nil
@@ -77,11 +67,11 @@ extension EndOfLine where V == [UInt8] {
     public var rawValue: V {
         switch self {
         case .CRLF:
-            return stringValue.unicodeScalars.map { UInt8($0.value) }
+            return "\r\n".unicodeScalars.map { UInt8($0.value) }
         case .LF:
-            return stringValue.unicodeScalars.map { UInt8($0.value) }
+            return "\n".unicodeScalars.map { UInt8($0.value) }
         case .CR:
-            return stringValue.unicodeScalars.map { UInt8($0.value) }
+            return "\r".unicodeScalars.map { UInt8($0.value) }
         }
     }
 }
@@ -89,11 +79,11 @@ extension EndOfLine where V == [UInt8] {
 extension EndOfLine where V == String {
     public init?(rawValue: V) {
         switch rawValue {
-        case EndOfLine.CRLF.stringValue:
+        case "\r\n":
             self = .CRLF
-        case EndOfLine.LF.stringValue:
+        case "\n":
             self = .LF
-        case EndOfLine.CR.stringValue:
+        case "\r":
             self = .CR
         default:
             return nil
@@ -103,11 +93,11 @@ extension EndOfLine where V == String {
     public var rawValue: V {
         switch self {
         case .CRLF:
-            return stringValue
+            return "\r\n"
         case .LF:
-            return stringValue
+            return "\n"
         case .CR:
-            return stringValue
+            return "\r"
         }
     }
 }
