@@ -116,7 +116,7 @@ public class PieceTreeTextBufferBuilder<V: RangeReplaceableCollection & Bidirect
 
     public func finish(normalizeEol: Bool = true) -> PieceTreeTextBufferFactory<V> {
         finish()
-        return PieceTreeTextBufferFactory(chunks: chunks, bom: bom, cr: cr, lf: lf, crlf: crlf, normalizeEol: normalizeEol, newLine: newLine, lineFeed: lineFeed)
+        return PieceTreeTextBufferFactory<V>(chunks: chunks, bom: bom, cr: cr, lf: lf, crlf: crlf, normalizeEol: normalizeEol, newLine: newLine, lineFeed: lineFeed)
     }
 
     func finish()

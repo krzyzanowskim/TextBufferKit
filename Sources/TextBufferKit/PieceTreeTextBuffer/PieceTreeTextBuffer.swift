@@ -40,9 +40,6 @@ public class PieceTreeTextBuffer<V: RangeReplaceableCollection & BidirectionalCo
         self.mightContainRTL = containsRTL
         self.pieceTree = pieceTree
     }
-}
-
-extension PieceTreeTextBuffer where V == [UInt8] {
 
     convenience init(chunks: inout [StringBuffer<V>], BOM: V, eol: EndOfLine<V>, containsRTL: Bool, isBasicASCII: Bool, eolNormalized: Bool, newLine: V.Element, lineFeed: V.Element)
     {
@@ -50,27 +47,6 @@ extension PieceTreeTextBuffer where V == [UInt8] {
         self.init(BOM: BOM, pieceTree: pieceTree, containsRTL: containsRTL, isBasicASCII: isBasicASCII, eolNormalized: eolNormalized)
     }
 
-    public var eol: EndOfLine<V> {
-        get { pieceTree.eol }
-        set {
-            if newValue == .LF || newValue == .CRLF {
-                pieceTree.eol = newValue
-            }
-        }
-    }
-
-    // #region TextBuffer
-    public static func == (left:PieceTreeTextBuffer, right: PieceTreeTextBuffer) -> Bool
-    {
-        if (left.bom != right.bom) {
-            return false
-        }
-        if (left.eol != right.eol) {
-            return false
-        }
-        return PieceTreeBase.equal (left: left.pieceTree, right: right.pieceTree)
-    }
-       
     public func createSnapshot (preserveBOM: Bool) -> PieceTreeSnapshot<V>
     {
         return pieceTree.createSnapshot(bom: preserveBOM ? bom: V())
@@ -80,21 +56,7 @@ extension PieceTreeTextBuffer where V == [UInt8] {
     {
         return pieceTree.getOffsetAt(lineNumber, column)
     }
-    
-    public func delete (offset: Int, count: Int) {
-        pieceTree.delete(offset: offset, cnt: count)
-    }
 
-    public var lineCount: Int {
-        get {
-            return pieceTree.lineCount
-        }
-    }
-    
-    public func insert (offset: Int, value: V) {
-        pieceTree.insert(offset, value)
-    }
-    
     public func getPositionAt(offset: Int) -> Position
     {
         return pieceTree.getPositionAt(offset)
@@ -106,20 +68,6 @@ extension PieceTreeTextBuffer where V == [UInt8] {
         let startPosition = getPositionAt(offset: start)
         let endPosition = getPositionAt(offset: end)
         return Range(startLineNumber: startPosition.line, startColumn: startPosition.column, endLineNumber: endPosition.line, endColumn: endPosition.column)
-    }
-
-    public func getValueInRange(range: Range<V>, eol: EndOfLinePreference = EndOfLinePreference.TextDefined) ->  V {
-    
-        if range.isEmpty() {
-            return V()
-        }
-        let lineEnding = _getEndOfLine(eol: eol)
-        return pieceTree.getValueInRange(range: range, eol: lineEnding)
-    }
-    
-    public func getValueAt (index: Int) -> V.Element? {
-        let b = getValueInRange(range: Range.from(start: index, end: index+1, on: self))
-        return b.first
     }
 
     public func getValueLengthInRange(range: Range<V>, eol: EndOfLinePreference = EndOfLinePreference.TextDefined) ->  Int
@@ -154,12 +102,6 @@ extension PieceTreeTextBuffer where V == [UInt8] {
     public func getLinesRawContent() -> V {
         return pieceTree.getLines()
     }
-    
-    /// Returns the contents of the specified line as a byte array
-    /// - Parameter lineNumber: the line to look up, starting at line 1
-    public func getLineContent(_ lineNumber: Int) -> V {
-        return pieceTree.getLineContent(lineNumber)
-    }
 
     /// Returns the content of the byte at the line `lineNumber` at offset `index`
     /// - Parameter lineNumber: the line to look up, starting at line 1
@@ -183,6 +125,76 @@ extension PieceTreeTextBuffer where V == [UInt8] {
     public func getLineMaxColumn(lineNumber: Int) ->  Int {
         return getLineLength(lineNumber: lineNumber) + 1
     }
+
+    static func containsRTL (_ str: V) -> Bool
+    {
+        // TODO: needs to scan the string to determine if it contains RTL characters.
+        return false
+    }
+
+    public enum UsageError: Error {
+        case overlappingRanges
+    }
+}
+
+extension PieceTreeTextBuffer where V == [UInt8] {
+
+    public var eol: EndOfLine<V> {
+        get { pieceTree.eol }
+        set {
+            if newValue == .LF || newValue == .CRLF {
+                pieceTree.eol = newValue
+            }
+        }
+    }
+
+    // #region TextBuffer
+    public static func == (left:PieceTreeTextBuffer, right: PieceTreeTextBuffer) -> Bool
+    {
+        if (left.bom != right.bom) {
+            return false
+        }
+        if (left.eol != right.eol) {
+            return false
+        }
+        return PieceTreeBase.equal (left: left.pieceTree, right: right.pieceTree)
+    }
+
+    public func delete (offset: Int, count: Int) {
+        pieceTree.delete(offset: offset, cnt: count)
+    }
+
+    public var lineCount: Int {
+        get {
+            return pieceTree.lineCount
+        }
+    }
+    
+    public func insert (offset: Int, value: V) {
+        pieceTree.insert(offset, value)
+    }
+
+
+    public func getValueInRange(range: Range<V>, eol: EndOfLinePreference = EndOfLinePreference.TextDefined) ->  V {
+    
+        if range.isEmpty() {
+            return V()
+        }
+        let lineEnding = _getEndOfLine(eol: eol)
+        return pieceTree.getValueInRange(range: range, eol: lineEnding)
+    }
+    
+    public func getValueAt (index: Int) -> V.Element? {
+        let b = getValueInRange(range: Range.from(start: index, end: index+1, on: self))
+        return b.first
+    }
+
+    /// Returns the contents of the specified line as a byte array
+    /// - Parameter lineNumber: the line to look up, starting at line 1
+    public func getLineContent(_ lineNumber: Int) -> V {
+        return pieceTree.getLineContent(lineNumber)
+    }
+
 
     static func firstNonWhitespaceIndex (_ str: V) -> Int
     {
@@ -235,12 +247,6 @@ extension PieceTreeTextBuffer where V == [UInt8] {
                 return self.eol.rawValue
         }
     }
-
-    static func containsRTL (_ str: V) -> Bool
-    {
-        // TODO: needs to scan the string to determine if it contains RTL characters.
-        return false
-    }
     
     static func isBasicASCII (_ str: V) -> Bool
     {
@@ -252,10 +258,6 @@ extension PieceTreeTextBuffer where V == [UInt8] {
             }
         }
         return true
-    }
-    
-    public enum UsageError: Error {
-        case overlappingRanges
     }
     
     public func applyEdits(rawOperations: [IdentifiedSingleEditOperation<V>], recordTrimAutoWhitespace: Bool) throws ->  ApplyEditsResult<V>
