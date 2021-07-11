@@ -672,7 +672,7 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
     }
 
     // Replaces \r\n, \r and \n with the value of eol
-    private func replaceNewLines (_ val: V) -> V where V == [UInt8]
+    func replaceNewLines (_ val: V) -> V where V == [UInt8]
     {
         var result = V()
         let len = val.count
@@ -681,13 +681,13 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
             let v = val [i]
             if v == 13 {
                 if i+1 < len && val [i+1] == 10 {
-                    result.append (contentsOf: eol.rawValue)
+                    result.append (contentsOf: _eol.rawValue)
                     i += 1
                 } else {
-                    result.append (contentsOf: eol.rawValue)
+                    result.append (contentsOf: _eol.rawValue)
                 }
             } else if v == 10 {
-                result.append (contentsOf: eol.rawValue)
+                result.append (contentsOf: _eol.rawValue)
             } else {
                 result.append (v)
             }
@@ -696,11 +696,42 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
         return result
     }
 
-//    private func replaceNewLines (_ val: V) -> V {
-//        fatalError("Not implemented")
-//    }
-
     private func normalizeEol () where V == [UInt8]
+    {
+        let averageBufferSize = self.averageBufferSize
+        let min = Int (Float (averageBufferSize) - floor(Float (averageBufferSize / 3)))
+        let max = min * 2
+
+        var tempChunk: V = V()
+        var tempChunkLen = 0
+        var chunks: [StringBuffer<V>] = [StringBuffer<V>]()
+
+        iterate(node: root, callback: { node in
+            let str = getNodeContent(node)
+            let len = str.count
+            if (tempChunkLen <= min || tempChunkLen + len < max) {
+                tempChunk += str
+                tempChunkLen += len
+                return true
+            }
+
+            // flush anyways
+            let text = replaceNewLines (tempChunk)
+            chunks.append(StringBuffer(buffer: text, lineStarts: LineStarts.createLineStartsArray(text, newLine: newLine, lineFeed: lineFeed)))
+            tempChunk = str
+            tempChunkLen = len
+            return true
+        })
+
+        if (tempChunkLen > 0) {
+            let text = replaceNewLines (tempChunk)
+            chunks.append (StringBuffer(buffer: text, lineStarts: LineStarts<V>.createLineStartsArray(text, newLine: newLine, lineFeed: lineFeed)))
+        }
+
+        create(chunks: &chunks, eol: _eol, eolNormalized: true)
+    }
+
+    private func normalizeEol () where V == String
     {
         let averageBufferSize = self.averageBufferSize
         let min = Int (Float (averageBufferSize) - floor(Float (averageBufferSize / 3)))
@@ -763,7 +794,7 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
         return ret
     }
 
-    public func getValueInRange(range: Range<V>, eol _eol: V? = nil) -> V where V == [UInt8] {
+    public func getValueInRange(range: Range<V>, eol __eol: V? = nil) -> V where V == [UInt8] {
         if range.startLineNumber == range.endLineNumber && range.startColumn == range.endColumn {
             return V()
         }
@@ -772,16 +803,13 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
             if let endPosition = nodeAt2(line: range.endLineNumber, col: range.endColumn) {
                 let value = getValueInRange2(startPosition, endPosition)
 
-                if _eol != nil {
-                    if (eol != self.eol || !eolNormalized) {
-
+                if __eol != nil {
+                    if eol != self.eol || !eolNormalized {
                         return replaceNewLines(value)
                     }
 
                     if (eol == self.eol && eolNormalized) {
-                        if (eol == .CRLF) {
-
-                        }
+                        //if (eol == .CRLF) { }
                         return value;
                     }
                     return replaceNewLines (value)
@@ -976,8 +1004,7 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
     }
 }
 
-extension PieceTreeBase where V == [UInt8] {
-
+extension PieceTreeBase where V == String {
     var eol: EndOfLine<V> {
         get {
             return _eol
@@ -987,7 +1014,21 @@ extension PieceTreeBase where V == [UInt8] {
             normalizeEol()
         }
     }
+}
 
+extension PieceTreeBase where V == [UInt8] {
+    var eol: EndOfLine<V> {
+        get {
+            return _eol
+        }
+        set {
+            _eol = newValue
+            normalizeEol()
+        }
+    }
+}
+
+extension PieceTreeBase where V == [UInt8] {
     private func validateCRLFWithPrevNode(nextNode: inout TreeNode)
     {
         if shouldCheckCRLF() && startWithLF(nextNode) {
