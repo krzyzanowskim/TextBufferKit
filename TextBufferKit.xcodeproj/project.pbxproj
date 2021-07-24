@@ -23,6 +23,9 @@
 		757A344E264DBAF800E9EAA3 /* SingleEditOperationIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757A344D264DBAF800E9EAA3 /* SingleEditOperationIdentifier.swift */; };
 		757A3450264DBB0F00E9EAA3 /* IdentifiedSingleEditOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757A344F264DBB0F00E9EAA3 /* IdentifiedSingleEditOperation.swift */; };
 		757A3452264DBB2200E9EAA3 /* ReverseSingleEditOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757A3451264DBB2200E9EAA3 /* ReverseSingleEditOperation.swift */; };
+		75CF5F9026ACA7E4007D3335 /* DefaultEndOfLine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75CF5F8F26ACA7E4007D3335 /* DefaultEndOfLine.swift */; };
+		75CF5F9226ACA803007D3335 /* PieceTreeTextBufferFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75CF5F9126ACA803007D3335 /* PieceTreeTextBufferFactory.swift */; };
+		75CF5F9426ACA855007D3335 /* PieceTreeTextBufferBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75CF5F9326ACA855007D3335 /* PieceTreeTextBufferBuilder.swift */; };
 		E3A891F82326F736001FA258 /* FindMatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A891F02326F736001FA258 /* FindMatch.swift */; };
 		E3A891F92326F736001FA258 /* PieceTreeBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A891F12326F736001FA258 /* PieceTreeBase.swift */; };
 		E3A891FA2326F736001FA258 /* SearchData.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A891F22326F736001FA258 /* SearchData.swift */; };
@@ -30,7 +33,7 @@
 		E3A891FC2326F736001FA258 /* PieceTreeTextBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A891F42326F736001FA258 /* PieceTreeTextBuffer.swift */; };
 		E3A891FD2326F736001FA258 /* Position.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A891F52326F736001FA258 /* Position.swift */; };
 		E3A891FE2326F736001FA258 /* TreeNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A891F62326F736001FA258 /* TreeNode.swift */; };
-		E3A891FF2326F736001FA258 /* PieceTreeBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A891F72326F736001FA258 /* PieceTreeBuilder.swift */; };
+		E3A891FF2326F736001FA258 /* BOMUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A891F72326F736001FA258 /* BOMUtils.swift */; };
 		E3A892032326F742001FA258 /* TextBufferKitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A892012326F742001FA258 /* TextBufferKitTests.swift */; };
 		E3A892042326F742001FA258 /* PieceTreeTextBufferTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A892022326F742001FA258 /* PieceTreeTextBufferTests.swift */; };
 /* End PBXBuildFile section */
@@ -68,6 +71,9 @@
 		757A344D264DBAF800E9EAA3 /* SingleEditOperationIdentifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingleEditOperationIdentifier.swift; sourceTree = "<group>"; };
 		757A344F264DBB0F00E9EAA3 /* IdentifiedSingleEditOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentifiedSingleEditOperation.swift; sourceTree = "<group>"; };
 		757A3451264DBB2200E9EAA3 /* ReverseSingleEditOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReverseSingleEditOperation.swift; sourceTree = "<group>"; };
+		75CF5F8F26ACA7E4007D3335 /* DefaultEndOfLine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultEndOfLine.swift; sourceTree = "<group>"; };
+		75CF5F9126ACA803007D3335 /* PieceTreeTextBufferFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PieceTreeTextBufferFactory.swift; sourceTree = "<group>"; };
+		75CF5F9326ACA855007D3335 /* PieceTreeTextBufferBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PieceTreeTextBufferBuilder.swift; sourceTree = "<group>"; };
 		E3A891F02326F736001FA258 /* FindMatch.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FindMatch.swift; sourceTree = "<group>"; };
 		E3A891F12326F736001FA258 /* PieceTreeBase.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PieceTreeBase.swift; sourceTree = "<group>"; };
 		E3A891F22326F736001FA258 /* SearchData.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SearchData.swift; sourceTree = "<group>"; };
@@ -75,7 +81,7 @@
 		E3A891F42326F736001FA258 /* PieceTreeTextBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PieceTreeTextBuffer.swift; sourceTree = "<group>"; };
 		E3A891F52326F736001FA258 /* Position.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Position.swift; sourceTree = "<group>"; };
 		E3A891F62326F736001FA258 /* TreeNode.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TreeNode.swift; sourceTree = "<group>"; };
-		E3A891F72326F736001FA258 /* PieceTreeBuilder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PieceTreeBuilder.swift; sourceTree = "<group>"; };
+		E3A891F72326F736001FA258 /* BOMUtils.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BOMUtils.swift; sourceTree = "<group>"; };
 		E3A892012326F742001FA258 /* TextBufferKitTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TextBufferKitTests.swift; sourceTree = "<group>"; };
 		E3A892022326F742001FA258 /* PieceTreeTextBufferTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PieceTreeTextBufferTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -196,7 +202,10 @@
 				752C47D2264DC63A00017C7C /* PieceTreeTextBuffer */,
 				E3A891F52326F736001FA258 /* Position.swift */,
 				E3A891F62326F736001FA258 /* TreeNode.swift */,
-				E3A891F72326F736001FA258 /* PieceTreeBuilder.swift */,
+				E3A891F72326F736001FA258 /* BOMUtils.swift */,
+				75CF5F8F26ACA7E4007D3335 /* DefaultEndOfLine.swift */,
+				75CF5F9126ACA803007D3335 /* PieceTreeTextBufferFactory.swift */,
+				75CF5F9326ACA855007D3335 /* PieceTreeTextBufferBuilder.swift */,
 			);
 			path = TextBufferKit;
 			sourceTree = "<group>";
@@ -325,11 +334,13 @@
 			files = (
 				E3A891F82326F736001FA258 /* FindMatch.swift in Sources */,
 				757A3452264DBB2200E9EAA3 /* ReverseSingleEditOperation.swift in Sources */,
+				75CF5F9026ACA7E4007D3335 /* DefaultEndOfLine.swift in Sources */,
 				E3A891FC2326F736001FA258 /* PieceTreeTextBuffer.swift in Sources */,
 				757A3446264DBA2000E9EAA3 /* InternalModelContentChange.swift in Sources */,
 				E3A891FD2326F736001FA258 /* Position.swift in Sources */,
 				752C47DD264DC74100017C7C /* PieceIndex.swift in Sources */,
 				752C47DF264DC76400017C7C /* NodePosition.swift in Sources */,
+				75CF5F9426ACA855007D3335 /* PieceTreeTextBufferBuilder.swift in Sources */,
 				752C47E1264DC7D800017C7C /* BufferCursor.swift in Sources */,
 				752C47D5264DC6AD00017C7C /* PieceTreeSearchCache.swift in Sources */,
 				E3A891FA2326F736001FA258 /* SearchData.swift in Sources */,
@@ -339,9 +350,10 @@
 				E3A891F92326F736001FA258 /* PieceTreeBase.swift in Sources */,
 				752C47DB264DC71C00017C7C /* StringBuffer.swift in Sources */,
 				757A344C264DBAE700E9EAA3 /* ValidatedEditOperation.swift in Sources */,
-				E3A891FF2326F736001FA258 /* PieceTreeBuilder.swift in Sources */,
+				E3A891FF2326F736001FA258 /* BOMUtils.swift in Sources */,
 				757A3450264DBB0F00E9EAA3 /* IdentifiedSingleEditOperation.swift in Sources */,
 				E3A891FB2326F736001FA258 /* Range.swift in Sources */,
+				75CF5F9226ACA803007D3335 /* PieceTreeTextBufferFactory.swift in Sources */,
 				757A344E264DBAF800E9EAA3 /* SingleEditOperationIdentifier.swift in Sources */,
 				752C47D7264DC6D200017C7C /* LineStarts.swift in Sources */,
 				757A3448264DBAA900E9EAA3 /* ApplyEditsResult.swift in Sources */,

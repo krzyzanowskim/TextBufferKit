@@ -27,35 +27,6 @@
 
 import Foundation
 
-private let bomArray: [UInt8] = [0xeb, 0xbb, 0xbf]
-
-func startsWithUTF8BOM<V: RangeReplaceableCollection & RandomAccessCollection & Hashable>(_ str: V) -> Bool where V.Index == Int, V.Element == UInt8
-{
-    // UTF8-BOM 0xEF,0xBB,0xBF
-    str.starts(with: bomArray)
-}
-
-func startsWithUTF8BOM<V: StringProtocol>(_ str: V) -> Bool
-{
-    // UTF8-BOM 0xEF,0xBB,0xBF
-    guard str.count > 2 else {
-        return false
-    }
-
-    return Array(str.utf8.prefix(bomArray.count)) == bomArray
-}
-
-public enum DefaultEndOfLine: String {
-    /**
-     * Use line feed (\n) as the end of line character.
-     */
-    case LF = "\n"
-    /**
-     * Use carriage return and line feed (\r\n) as the end of line character.
-     */
-    case CRLF = "\r\n"
-}
-
 public class PieceTreeTextBufferFactory<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int, V.Element == UInt8 {
     var chunks: [StringBuffer<V>]
     var bom: V
