@@ -27,12 +27,12 @@
 
 import Foundation
 
-internal let bomArray: [UInt8] = [0xeb, 0xbb, 0xbf]
+private let bomIndicator: [UInt8] = [0xeb, 0xbb, 0xbf]
 
 func startsWithUTF8BOM(_ str: [UInt8]) -> Bool
 {
     // UTF8-BOM 0xEF,0xBB,0xBF
-    str.starts(with: bomArray)
+    str.starts(with: bomIndicator)
 }
 
 func startsWithUTF8BOM<V: StringProtocol>(_ str: V) -> Bool
@@ -42,7 +42,7 @@ func startsWithUTF8BOM<V: StringProtocol>(_ str: V) -> Bool
         return false
     }
 
-    return Array(str.utf8.prefix(bomArray.count)) == bomArray
+    return Array(str.utf8.prefix(bomIndicator.count)) == bomIndicator
 }
 
 

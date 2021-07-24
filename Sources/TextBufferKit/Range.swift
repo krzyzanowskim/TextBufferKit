@@ -29,7 +29,7 @@ import Foundation
 
 
 /// A range in the editor. (startLineNumber,startColumn) is <= (endLineNumber,endColumn)
-public struct Range<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int {
+public struct Range<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Element: Equatable {
     // negative if a < b
     // zero if a == b
     // positive if a > b
@@ -61,24 +61,24 @@ public struct Range<V: RangeReplaceableCollection & RandomAccessCollection & Has
     /// Column on which the range ends in line `endLineNumber`.
     public var endColumn: Int
     
-    public func isEmpty() ->Bool
+    public var isEmpty: Bool
     {
         startLineNumber == endLineNumber && startColumn == endColumn
     }
 
-    public func getEndPosition () -> Position
+    public var endPosition: Position
     {
-        return Position(line: endLineNumber, column: endColumn)
+        Position(line: endLineNumber, column: endColumn)
     }
     
-    public func getStartPosition() -> Position
+    public var startPosition: Position
     {
-        return Position(line: startLineNumber, column: startColumn)
+        Position(line: startLineNumber, column: startColumn)
     }
 }
 
-extension Range where V.Element == UInt8 {
-    
+extension Range where V == [UInt8] {
+
     public static func from (start: Int, end: Int, on: PieceTreeTextBuffer<V>) -> Range
     {
         let sp = on.getPositionAt(offset: start)

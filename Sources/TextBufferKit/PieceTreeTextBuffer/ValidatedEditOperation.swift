@@ -26,7 +26,7 @@
 
 import Foundation
 
-public struct ValidatedEditOperation<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int {
+public struct ValidatedEditOperation<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Element: Equatable {
     var sortIndex: Int
     var identifier: SingleEditOperationIdentifier?
     var range: Range<V>

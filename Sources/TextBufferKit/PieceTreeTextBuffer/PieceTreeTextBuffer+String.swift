@@ -26,10 +26,12 @@
 
 import Foundation
 
-public class ReverseSingleEditOperation<V: RangeReplaceableCollection & BidirectionalCollection & Hashable>: IdentifiedSingleEditOperation<V> where V.Element: Equatable {
-    var sortIndex: Int
-    internal init(sortIndex: Int, identifier: SingleEditOperationIdentifier?, range: Range<V>, text: V?, forceMoveMarkers: Bool, isAutoWhitespaceEdit: Bool?, isTracked: Bool) {
-        self.sortIndex = sortIndex
-        super.init (identifier: identifier, range: range, text: text, forceMoveMarkers: forceMoveMarkers, isAutoWhitespaceEdit: isAutoWhitespaceEdit, isTracked: isTracked)
+extension PieceTreeTextBuffer where V == String {
+    
+    convenience init(chunks: inout [StringBuffer<V>], BOM: V, eol: V, containsRTL: Bool, isBasicASCII: Bool, eolNormalized: Bool)
+    {
+        let pieceTree = PieceTreeBase(chunks: &chunks, eol: eol, eolNormalized: eolNormalized)
+        self.init(BOM: BOM, eol: eol, pieceTree: pieceTree, containsRTL: containsRTL, isBasicASCII: isBasicASCII, eolNormalized: eolNormalized)
     }
+
 }

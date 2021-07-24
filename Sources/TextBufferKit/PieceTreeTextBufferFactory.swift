@@ -27,7 +27,7 @@
 
 import Foundation
 
-public class PieceTreeTextBufferFactory<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> where V.Index == Int, V.Element == UInt8 {
+public class PieceTreeTextBufferFactory<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> {
     var chunks: [StringBuffer<V>]
     var bom: V
     var cr, lf, crlf: Int
@@ -46,68 +46,12 @@ public class PieceTreeTextBufferFactory<V: RangeReplaceableCollection & RandomAc
         self.containsRtl = containsRtl ?? false
         self.isBasicAscii = isBasicAscii ?? false
     }
-}
 
-extension PieceTreeTextBufferFactory where V == [UInt8] {
-    //
-    // returns an array of either '\r\n' | '\n'
-    //
-    func getEOL(_ defaultEOL: DefaultEndOfLine) -> V {
-        let totalEOLCount = cr + lf + crlf
-        let totalCRCount = cr + crlf
-        if (totalEOLCount == 0) {
-            // This is an empty file or a file with precisely one line
-            return (defaultEOL == .LF ? [10] : [13, 10])
+    public func getFirstLineText(upTo index: V.Index? = nil) -> V {
+        guard let firstBuffer = chunks.first?.buffer else {
+            return V()
         }
-        if (totalCRCount > totalEOLCount / 2) {
-            // More than half of the file contains \r\n ending lines
-            return [13, 10];
-        }
-        // At least one line more ends in \n
-        return [10]
-    }
-
-    public func createPieceTreeBase (_ defaultEOL: DefaultEndOfLine = .LF) -> PieceTreeBase<V>
-    {
-        let eol = getEOL(defaultEOL)
-        var chunks = self.chunks
-
-        if normalizeEol && ((eol == [13, 10] && (cr > 0 || lf > 0)) || (eol == [10] && (cr > 0 || crlf > 0))) {
-            // Normalize pieces
-            for i in 0..<chunks.count {
-                // TODO
-                // let str = chunks[i].buffer(/\r\n|\r|\n/g, eol);
-                let str = chunks [i].buffer
-                let newLineStart = LineStarts.createLineStartsArray(str)
-                chunks[i] = StringBuffer(buffer: str, lineStarts: newLineStart)
-            }
-        }
-
-        return PieceTreeBase(chunks: &chunks, eol: eol, eolNormalized: normalizeEol)
-    }
-
-    public func create (_ defaultEOL: DefaultEndOfLine = .LF) -> PieceTreeTextBuffer<V>
-    {
-        let eol = getEOL(defaultEOL)
-        var chunks = self.chunks
-
-        if normalizeEol && ((eol == [13, 10] && (cr > 0 || lf > 0)) || (eol == [10] && (cr > 0 || crlf > 0))) {
-            // Normalize pieces
-            for i in 0..<chunks.count {
-                // TODO
-                // let str = chunks[i].buffer(/\r\n|\r|\n/g, eol);
-                let str = chunks [i].buffer
-                let newLineStart = LineStarts.createLineStartsArray(str)
-                chunks[i] = StringBuffer(buffer: str, lineStarts: newLineStart)
-            }
-        }
-
-        return PieceTreeTextBuffer(chunks: &chunks, BOM: bom, eol: eol, containsRTL: containsRtl, isBasicASCII: isBasicAscii, eolNormalized: normalizeEol)
-    }
-
-
-    public func getFirstLineText(lengthLimit: Int) -> V {
-        return V (chunks [0].buffer [0..<lengthLimit])
+        return V(firstBuffer[..<(index ?? firstBuffer.endIndex)])
         // TODO
         // return chunks[0].buffer.substr(0, 100).split(/\r\n|\r|\n/)[0];
     }

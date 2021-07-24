@@ -26,7 +26,7 @@
 
 import Foundation
 
-public struct StringBuffer<V: RangeReplaceableCollection & RandomAccessCollection & Hashable> {
+public struct StringBuffer<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> {
     var buffer: V
     var lineStarts: [V.Index]
 }

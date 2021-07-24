@@ -1,8 +1,8 @@
 //
-//  PieceTreeBuilder.swift
+//  PieceTreeBase.swift
 //  swift-textbuffer
 //
-//  Created by Miguel de Icaza on 8/15/19.
+//  Created by Miguel de Icaza on 8/10/19.
 //  Copyright 2019 Miguel de Icaza, Microsoft Corp
 //
 //  Permission is hereby granted, free of charge, to any person obtaining
@@ -27,18 +27,47 @@
 
 import Foundation
 
-public class PieceTreeTextBufferBuilder<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Element: Hashable {
-    var chunks: [StringBuffer<V>] = []
-    var bom: V = V()
+public struct PieceTreeSnapshot<V: RangeReplaceableCollection & BidirectionalCollection & Hashable> where V.Element: Equatable {
+    var pieces: [Piece]
+    var index: Int
+    var tree: PieceTreeBase<V>
+    var bom: V
 
-    var hasPreviousChar: Bool = false
-    var previousChar: V.Element?
+    public init (tree: PieceTreeBase<V>, bom: V)
+    {
+        pieces = []
+        self.tree = tree
+        self.bom = bom
+        index = 0
+        if tree.root !== TreeNode.SENTINEL{
+            tree.iterate(node: tree.root, callback: { node in
+                if node !== TreeNode.SENTINEL {
+                    self.pieces.append(node.piece)
+                }
+                return true
+            })
+        }
+    }
 
-    var cr: Int = 0
-    var lf: Int = 0
-    var crlf: Int = 0
+    public mutating func read() -> V?  {
+        if pieces.count == 0 {
+            if index == 0 {
+                index += 1
+                return bom
+            } else {
+                return nil
+            }
+        }
 
-    init (previousChar: V.Element? = nil) {
-        self.previousChar = previousChar
+        if index > pieces.count - 1 {
+            return nil
+        }
+
+        let idx  = index
+        index += 1
+        if index == 0 {
+            return bom + tree.getPieceContent(piece: pieces[idx])
+        }
+        return tree.getPieceContent(piece: pieces[idx])
     }
 }

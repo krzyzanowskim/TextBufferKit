@@ -155,7 +155,7 @@ func resetSentinel() {
     TreeNode.SENTINEL.parent = TreeNode.SENTINEL
 }
 
-func leftRotate<V: RangeReplaceableCollection & RandomAccessCollection & Hashable>(_ tree: PieceTreeBase<V>, _ x: TreeNode) where V.Index == Int {
+func leftRotate<V: RangeReplaceableCollection & BidirectionalCollection & Hashable>(_ tree: PieceTreeBase<V>, _ x: TreeNode) {
     let y = x.right!
 
     // fix size_left
@@ -178,7 +178,7 @@ func leftRotate<V: RangeReplaceableCollection & RandomAccessCollection & Hashabl
     x.parent = y
 }
 
-func rightRotate<V: RangeReplaceableCollection & RandomAccessCollection & Hashable>(_ tree: PieceTreeBase<V>, _ y: TreeNode) where V.Index == Int {
+func rightRotate<V: RangeReplaceableCollection & BidirectionalCollection & Hashable>(_ tree: PieceTreeBase<V>, _ y: TreeNode) {
     guard let x = y.left else {
         assert(true)
         return
@@ -206,7 +206,7 @@ func rightRotate<V: RangeReplaceableCollection & RandomAccessCollection & Hashab
     y.parent = x
 }
 
-func rbDelete<V: RangeReplaceableCollection & RandomAccessCollection & Hashable>(_ tree: PieceTreeBase<V>, _ z: TreeNode) where V.Index == Int {
+func rbDelete<V: RangeReplaceableCollection & BidirectionalCollection & Hashable>(_ tree: PieceTreeBase<V>, _ z: TreeNode) {
     var x: TreeNode
     var y: TreeNode
 
@@ -367,7 +367,7 @@ func rbDelete<V: RangeReplaceableCollection & RandomAccessCollection & Hashable>
     resetSentinel()
 }
 
-func fixInsert<V: RangeReplaceableCollection & RandomAccessCollection & Hashable>(_ tree: PieceTreeBase<V>,  _ _x: TreeNode) where V.Index == Int {
+func fixInsert<V: RangeReplaceableCollection & BidirectionalCollection & Hashable>(_ tree: PieceTreeBase<V>,  _ _x: TreeNode) {
     var x = _x
     recomputeTreeMetadata(tree, x)
 
@@ -413,7 +413,7 @@ func fixInsert<V: RangeReplaceableCollection & RandomAccessCollection & Hashable
     tree.root.color = .black
 }
 
-func updateTreeMetadata<V: RangeReplaceableCollection & RandomAccessCollection & Hashable>(_ tree: PieceTreeBase<V>, _ _x: TreeNode, _ delta: Int, _ lineFeedCountDelta: Int) where V.Index == Int {
+func updateTreeMetadata<V: RangeReplaceableCollection & BidirectionalCollection & Hashable>(_ tree: PieceTreeBase<V>, _ _x: TreeNode, _ delta: Int, _ lineFeedCountDelta: Int) {
     var x = _x
     // node length change or line feed count change
     while (x !== tree.root && x !== TreeNode.SENTINEL) {
@@ -426,7 +426,7 @@ func updateTreeMetadata<V: RangeReplaceableCollection & RandomAccessCollection &
     }
 }
 
-func recomputeTreeMetadata<V: RangeReplaceableCollection & RandomAccessCollection & Hashable>(_ tree: PieceTreeBase<V>, _ _x: TreeNode) where V.Index == Int {
+func recomputeTreeMetadata<V: RangeReplaceableCollection & BidirectionalCollection & Hashable>(_ tree: PieceTreeBase<V>, _ _x: TreeNode) {
     var x = _x
     var delta = 0
     var lf_delta = 0;
