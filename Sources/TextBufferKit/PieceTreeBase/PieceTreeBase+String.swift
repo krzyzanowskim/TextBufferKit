@@ -500,9 +500,13 @@ extension PieceTreeBase where V == String {
         let lineStarts = prevPiecStringeBuffer.lineStarts
         let newEnd: BufferCursor
 
+
         if prev.piece.end.column == 0 {
             // it means, last line ends with \r, not \r\n
-            newEnd = BufferCursor (line: prev.piece.end.line - 1, column: lineStarts[prev.piece.end.line] - lineStarts[prev.piece.end.line - 1] - 1 )
+            newEnd = BufferCursor (
+                line: prev.piece.end.line - 1,
+                column: prevPiecStringeBuffer.buffer.distance(from: lineStarts[prev.piece.end.line - 1], to: lineStarts[prev.piece.end.line]) - 1 //lineStarts[prev.piece.end.line] - lineStarts[prev.piece.end.line - 1] - 1
+            )
         } else {
             // \r\n
             newEnd = BufferCursor (line: prev.piece.end.line, column: prev.piece.end.column - 1)
@@ -733,42 +737,50 @@ extension PieceTreeBase where V == String {
             return newPieces
         }
 
-        var startOffset = buffers[0].buffer.count
+        var startOffset = buffers[0].buffer.indices.last!
         var lineStarts = createLineStartsArray(_text)
 
         var start = lastChangeBufferPos
 
         // co to jest, startOffset to endIndex? czy nie
-        if buffers[0].lineStarts[buffers[0].lineStarts.count - 1] == startOffset
-            && startOffset != 0
-            && startWithLF(_text)
-            && endWithCR(buffers[0].buffer) // todo, we can check _lastChangeBufferPos's column as it's the last one
+        if startOffset != buffers[0].buffer.startIndex,
+           buffers[0].lineStarts[buffers[0].lineStarts.count - 1] == startOffset,
+           startWithLF(_text),
+           endWithCR(buffers[0].buffer) // todo, we can check _lastChangeBufferPos's column as it's the last one
         {
             lastChangeBufferPos = BufferCursor(line: lastChangeBufferPos.line, column: lastChangeBufferPos.column + 1)
             start = lastChangeBufferPos
 
             for i in 0..<lineStarts.count {
-                lineStarts[i] += startOffset + 1
+                let distance = _text.distance(from: lineStarts[i], to: startOffset) + 1
+                lineStarts[i] = _text.index(lineStarts[i], offsetBy: distance) //lineStarts[i] = lineStarts[i] + startOffset + 1
             }
 
             buffers[0].lineStarts = buffers[0].lineStarts + lineStarts [1...]
-            buffers[0].buffer += [95 /* _ */] + _text
-            startOffset += 1
+            buffers[0].buffer += [Character("_") /* 95 */] + _text
+            startOffset = _text.index(after: startOffset) //startOffset += 1
         } else {
-            if startOffset != 0 {
+            if startOffset != buffers[0].buffer.startIndex {
                 for i in 0..<lineStarts.count {
-                    lineStarts[i] += startOffset
+                    let distance = _text.distance(from: lineStarts[i], to: startOffset)
+                    lineStarts[i] = _text.index(lineStarts[i], offsetBy: distance)
                 }
             }
             buffers[0].lineStarts = buffers[0].lineStarts + lineStarts [1...]
             buffers[0].buffer += _text
         }
 
-        let endOffset = buffers[0].buffer.count
+        let endOffset = buffers[0].buffer.indices.last!
         let endIndex = buffers[0].lineStarts.count - 1
-        let endColumn = endOffset - buffers[0].lineStarts[endIndex] // distance dziwne jakieś, co to woglejest
+        let endColumn = buffers[0].buffer.distance(from: buffers[0].lineStarts[endIndex], to: endOffset) // endOffset - buffers[0].lineStarts[endIndex]
         let endPos = BufferCursor (line: endIndex, column: endColumn)
-        let newPiece = Piece(bufferIndex: 0, start: start, end: endPos, length: endOffset-startOffset, lineFeedCount: getLineFeedCount(bufferIndex: 0, start: start, end: endPos))
+        let newPiece = Piece(
+            bufferIndex: 0,
+            start: start,
+            end: endPos,
+            length: buffers[0].buffer.distance(from: startOffset, to: endOffset), //endOffset - startOffset,
+            lineFeedCount: getLineFeedCount(bufferIndex: 0, start: start, end: endPos)
+        )
         lastChangeBufferPos = endPos
         return [newPiece]
     }
