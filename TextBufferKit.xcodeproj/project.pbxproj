@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		37D5B8E2221A3C5B004E086E /* TextBufferKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 37D5B8D8221A3C5B004E086E /* TextBufferKit.framework */; };
+		7509A89226AE158000CF07EA /* utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7509A89126AE158000CF07EA /* utils.swift */; };
 		752C47D5264DC6AD00017C7C /* PieceTreeSearchCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752C47D4264DC6AD00017C7C /* PieceTreeSearchCache.swift */; };
 		752C47D7264DC6D200017C7C /* LineStarts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752C47D6264DC6D200017C7C /* LineStarts.swift */; };
 		752C47D9264DC6FE00017C7C /* CacheEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752C47D8264DC6FE00017C7C /* CacheEntry.swift */; };
@@ -67,6 +68,7 @@
 		37D5B917221A3CD9004E086E /* UniversalFramework_Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = UniversalFramework_Base.xcconfig; sourceTree = "<group>"; };
 		37D5B918221A3CD9004E086E /* UniversalFramework_Test.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = UniversalFramework_Test.xcconfig; sourceTree = "<group>"; };
 		37D5B919221A3CD9004E086E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		7509A89126AE158000CF07EA /* utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = utils.swift; sourceTree = "<group>"; };
 		752C47D4264DC6AD00017C7C /* PieceTreeSearchCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PieceTreeSearchCache.swift; sourceTree = "<group>"; };
 		752C47D6264DC6D200017C7C /* LineStarts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LineStarts.swift; sourceTree = "<group>"; };
 		752C47D8264DC6FE00017C7C /* CacheEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CacheEntry.swift; sourceTree = "<group>"; };
@@ -248,6 +250,7 @@
 			children = (
 				E3A892012326F742001FA258 /* TextBufferKitTests.swift */,
 				E3A892022326F742001FA258 /* PieceTreeTextBufferTests.swift */,
+				7509A89126AE158000CF07EA /* utils.swift */,
 			);
 			path = TextBufferKitTests;
 			sourceTree = "<group>";
@@ -409,6 +412,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7509A89226AE158000CF07EA /* utils.swift in Sources */,
 				E3A892032326F742001FA258 /* TextBufferKitTests.swift in Sources */,
 				E3A892042326F742001FA258 /* PieceTreeTextBufferTests.swift in Sources */,
 			);
@@ -537,7 +541,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 37D5B918221A3CD9004E086E /* UniversalFramework_Test.xcconfig */;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				PRODUCT_BUNDLE_IDENTIFIER = org.tirania.TextBufferKitTests;
@@ -550,7 +553,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 37D5B918221A3CD9004E086E /* UniversalFramework_Test.xcconfig */;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				PRODUCT_BUNDLE_IDENTIFIER = org.tirania.TextBufferKitTests;

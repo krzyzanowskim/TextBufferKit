@@ -19,45 +19,7 @@ import XCTest
 import Foundation
 @testable import TextBufferKit
 
-extension String {
 
-    func substring (_ start: Int, _ end: Int) -> String
-    {
-        //
-        // This is coded this way, because the documented:
-        // let sidx = str.index (str.startIndex, offsetBy: start)
-        // let eix = str.index (str.startIndex, offsetBy: end)
-        // let result = self[sidx..<eidx] produces the expected [sidx,eidx) range for strings
-        // but produces [sidx,eidx] range when the string contains "\r\r\n\n"
-        let j = toBytes (self)
-        return toStr (Array (j [start..<end]))
-    }
-
-    func substring (_ start: Int) -> String
-    {
-        if start > self.count {
-            return ""
-        }
-        // This used to be coded like this:
-        // return String (self [self.index(self.startIndex, offsetBy: start)...])
-        // But swift decided that for the string "\r\r\n", the substring(2) is not "\n" but ""
-        let j = toBytes (self)
-        return toStr (Array (j [start...]))
-    }
-}
-
-typealias bstr = [UInt8]
-extension bstr {
-    func substring (_ start: Int, _ end: Int) -> bstr
-    {
-        return Array (self [start..<end])
-    }
-    
-    func substring (_ start: Int) -> bstr
-    {
-        return Array (self [start...])
-    }
-}
 
 class PieceTreeTextBufferTests: XCTestCase {
 
@@ -116,15 +78,15 @@ class PieceTreeTextBufferTests: XCTestCase {
     // line separator, not two.
     func splitStringNewlines (_ str: String) -> [String]
     {
-        let lines = PieceTreeBase.splitBufferInLines (toBytes (str))
+        let lines = PieceTreeBase.splitBufferInLines (str.toBytes())
         var result: [String] = []
         for x in lines {
-            result.append (toStr (x))
+            result.append (x.toStr())
         }
         return result
     }
     
-    func testLinesContent(_ str: String, _ pieceTable: PieceTreeBase)
+    func testLinesContent(_ str: String, _ pieceTable: PieceTreeBase<[UInt8]>)
     {
         let lines = splitStringNewlines(str)
         
@@ -134,7 +96,7 @@ class PieceTreeTextBufferTests: XCTestCase {
         XCTAssertEqual(pieceTable.lineCount, lines.count)
         XCTAssertEqual(pieceTable.getLines(), str)
         for i in 0..<lines.count {
-            XCTAssertEqual(pieceTable.getLineContent(i + 1), toBytes (lines[i]))
+            XCTAssertEqual(pieceTable.getLineContent(i + 1), lines[i].toBytes())
             XCTAssertEqual(
                 trimLineFeed(
                     pieceTable.getValueInRange(
@@ -146,12 +108,12 @@ class PieceTreeTextBufferTests: XCTestCase {
                         )
                     )
                 ),
-                toBytes (lines[i])
+                lines[i].toBytes()
             )
         }
     }
 
-    func testLinesContent(_ str: bstr, _ pieceTable: PieceTreeBase)
+    func testLinesContent(_ str: [UInt8], _ pieceTable: PieceTreeBase<[UInt8]>)
     {
         XCTAssert (str == pieceTable.getLinesRawContent ())
         return
@@ -184,7 +146,7 @@ class PieceTreeTextBufferTests: XCTestCase {
         }
     }
     
-    func testLineStarts(_ str: String, _ pieceTable: PieceTreeBase) {
+    func testLineStarts(_ str: String, _ pieceTable: PieceTreeBase<[UInt8]>) {
 //        let lineStarts = [0]
 //
 //        // Reset regex to search from the beginning
@@ -239,11 +201,11 @@ class PieceTreeTextBufferTests: XCTestCase {
 //        }
     }
 
-    func createTextBuffer(_ val: [String], _ normalizeEOL: Bool = true, size: Int? = nil) -> PieceTreeBase
+    func createTextBuffer(_ val: [String], _ normalizeEOL: Bool = true, size: Int? = nil) -> PieceTreeBase<[UInt8]>
     {
-        let bufferBuilder = PieceTreeTextBufferBuilder()
+        let bufferBuilder = PieceTreeTextBufferBuilder<[UInt8]>()
         for chunk in val {
-            bufferBuilder.acceptChunk(chunk)
+            bufferBuilder.acceptChunk(chunk.toBytes())
         }
         let factory = bufferBuilder.finish(normalizeEol: normalizeEOL)
         let pieceTree = factory.create(.LF).getPieceTree()
@@ -255,7 +217,7 @@ class PieceTreeTextBufferTests: XCTestCase {
     }
     
 
-    func assertTreeInvariants(_ T: PieceTreeBase)
+    func assertTreeInvariants(_ T: PieceTreeBase<[UInt8]>)
     {
         XCTAssertTrue(TreeNode.SENTINEL.color == .black)
         XCTAssertTrue(TreeNode.SENTINEL.parent === TreeNode.SENTINEL)
@@ -299,14 +261,14 @@ class PieceTreeTextBufferTests: XCTestCase {
         return (size: n.size_left + n.piece.length + actualRight.size, lf_cnt: n.lf_left + n.piece.lineFeedCount + actualRight.lf_cnt )
     }
 
-    func assertValidTree(_ T: PieceTreeBase)
+    func assertValidTree(_ t: PieceTreeBase<[UInt8]>)
     {
-        if (T.root === TreeNode.SENTINEL) {
+        if (t.root === TreeNode.SENTINEL) {
             return
         }
-        XCTAssertEqual(T.root.color, .black)
-        XCTAssertEqual(depth(T.root.left!), depth(T.root.right!))
-        assertValidNode (T.root)
+        XCTAssertEqual(t.root.color, .black)
+        XCTAssertEqual(depth(t.root.left!), depth(t.root.right!))
+        assertValidNode (t.root)
     }
 
     func testInserts ()
@@ -350,7 +312,7 @@ class PieceTreeTextBufferTests: XCTestCase {
                 "This is a document with some text."
             ])
 
-        pieceTable.insert(34, toBytes ("This is some more text to insert at offset 34."))
+        pieceTable.insert(34, "This is some more text to insert at offset 34.".toBytes())
         XCTAssertEqual(
             pieceTable.getLines(),
             "This is a document with some text.This is some more text to insert at offset 34."
@@ -692,7 +654,7 @@ class PieceTreeTextBufferTests: XCTestCase {
         XCTAssertEqual(pieceTable.getLines(), str)
         
         pieceTable.insert(15, "\n\r\r\r")
-        var bstr = toBytes (str)
+        var bstr = str.toBytes()
         bstr = bstr [0..<15] + [10,13,13,13] + bstr[15...]
         str = str.substring(0, 15) + "\n\r\r\r" + str.substring(15)
         XCTAssertEqual(pieceTable.getLinesRawContent (), bstr)
@@ -975,12 +937,12 @@ class PieceTreeTextBufferTests: XCTestCase {
         pieceTable.delete(offset: 7, cnt: 2)
         // "a\nb\nc\ndh\ni\njk"
 
-        XCTAssertEqual(toStr (pieceTable.getValueInRange(range: Range(startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 3))), "a\n")
-        XCTAssertEqual(toStr (pieceTable.getValueInRange(range: Range(startLineNumber: 2, startColumn: 1, endLineNumber: 2, endColumn: 3))), "b\n")
-        XCTAssertEqual(toStr (pieceTable.getValueInRange(range: Range(startLineNumber: 3, startColumn: 1, endLineNumber: 3, endColumn: 3))), "c\n")
-        XCTAssertEqual(toStr (pieceTable.getValueInRange(range: Range(startLineNumber: 4, startColumn: 1, endLineNumber: 4, endColumn: 4))), "dh\n")
-        XCTAssertEqual(toStr (pieceTable.getValueInRange(range: Range(startLineNumber: 5, startColumn: 1, endLineNumber: 5, endColumn: 3))), "i\n")
-        XCTAssertEqual(toStr (pieceTable.getValueInRange(range: Range(startLineNumber: 6, startColumn: 1, endLineNumber: 6, endColumn: 3))), "jk")
+        XCTAssertEqual(pieceTable.getValueInRange(range: Range(startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 3)).toStr(), "a\n")
+        XCTAssertEqual(pieceTable.getValueInRange(range: Range(startLineNumber: 2, startColumn: 1, endLineNumber: 2, endColumn: 3)).toStr(), "b\n")
+        XCTAssertEqual(pieceTable.getValueInRange(range: Range(startLineNumber: 3, startColumn: 1, endLineNumber: 3, endColumn: 3)).toStr(), "c\n")
+        XCTAssertEqual(pieceTable.getValueInRange(range: Range(startLineNumber: 4, startColumn: 1, endLineNumber: 4, endColumn: 4)).toStr(), "dh\n")
+        XCTAssertEqual(pieceTable.getValueInRange(range: Range(startLineNumber: 5, startColumn: 1, endLineNumber: 5, endColumn: 3)).toStr(), "i\n")
+        XCTAssertEqual(pieceTable.getValueInRange(range: Range(startLineNumber: 6, startColumn: 1, endLineNumber: 6, endColumn: 3)).toStr(), "jk")
         assertTreeInvariants(pieceTable)
     }
 
@@ -1085,9 +1047,9 @@ class PieceTreeTextBufferTests: XCTestCase {
     {
         // test("get line content", () => {
         let pieceTable = createTextBuffer(["1"])
-        XCTAssertEqual(pieceTable.getLineRawContent(1), toBytes ("1"))
+        XCTAssertEqual(pieceTable.getLineRawContent(1, 0), "1".toBytes())
         pieceTable.insert(1, "2")
-        XCTAssertEqual(pieceTable.getLineRawContent(1), toBytes ("12"))
+        XCTAssertEqual(pieceTable.getLineRawContent(1, 0), "12".toBytes())
         assertTreeInvariants(pieceTable)
     }
     
@@ -1095,10 +1057,10 @@ class PieceTreeTextBufferTests: XCTestCase {
     {
         // test("get line content basic", () => {
         let pieceTable = createTextBuffer(["1\n2\n3\n4"])
-        XCTAssertEqual(pieceTable.getLineRawContent(1), toBytes ("1\n"))
-        XCTAssertEqual(pieceTable.getLineRawContent(2), toBytes ("2\n"))
-        XCTAssertEqual(pieceTable.getLineRawContent(3), toBytes ("3\n"))
-        XCTAssertEqual(pieceTable.getLineRawContent(4), toBytes ("4"))
+        XCTAssertEqual(pieceTable.getLineRawContent(1, 0), "1\n".toBytes())
+        XCTAssertEqual(pieceTable.getLineRawContent(2, 0), "2\n".toBytes())
+        XCTAssertEqual(pieceTable.getLineRawContent(3, 0), "3\n".toBytes())
+        XCTAssertEqual(pieceTable.getLineRawContent(4, 0), "4".toBytes())
         assertTreeInvariants(pieceTable)
     }
     
@@ -1110,12 +1072,12 @@ class PieceTreeTextBufferTests: XCTestCase {
         pieceTable.delete(offset: 7, cnt: 2)
         // "a\nb\nc\ndh\ni\njk"
 
-        XCTAssertEqual(pieceTable.getLineRawContent(1), toBytes ("a\n"))
-        XCTAssertEqual(pieceTable.getLineRawContent(2), toBytes ("b\n"))
-        XCTAssertEqual(pieceTable.getLineRawContent(3), toBytes ("c\n"))
-        XCTAssertEqual(pieceTable.getLineRawContent(4), toBytes ("dh\n"))
-        XCTAssertEqual(pieceTable.getLineRawContent(5), toBytes ("i\n"))
-        XCTAssertEqual(pieceTable.getLineRawContent(6), toBytes ("jk"))
+        XCTAssertEqual(pieceTable.getLineRawContent(1, 0), "a\n".toBytes())
+        XCTAssertEqual(pieceTable.getLineRawContent(2, 0), "b\n".toBytes())
+        XCTAssertEqual(pieceTable.getLineRawContent(3, 0), "c\n".toBytes())
+        XCTAssertEqual(pieceTable.getLineRawContent(4, 0), "dh\n".toBytes())
+        XCTAssertEqual(pieceTable.getLineRawContent(5, 0), "i\n".toBytes())
+        XCTAssertEqual(pieceTable.getLineRawContent(6, 0), "jk".toBytes())
         assertTreeInvariants(pieceTable)
     }
 
@@ -1458,17 +1420,17 @@ class PieceTreeTextBufferTests: XCTestCase {
     func testCentralized_random4 ()
     {
         // test("random bug 4", () => {
-        var str: bstr = [10,10,10,10]
+        var str: [UInt8] = [10,10,10,10]
         let pieceTable = createTextBuffer(["\n\n\n\n"], false)
 
         pieceTable.delete(offset: 3, cnt: 1)
         //bstr = Array (bstr[0..<3]) + Array (bstr[4...])
         str = str.substring(0, 3) + str.substring(3 + 1)
         pieceTable.insert(1, "\r\r\r\r")
-        str = str.substring(0, 1) + toBytes ("\r\r\r\r") + str.substring(1)
+        str = str.substring(0, 1) + "\r\r\r\r".toBytes() + str.substring(1)
         //bstr = Array (bstr[0..<1]) + [13,13,13,13] + Array (bstr[1...])
         pieceTable.insert(6, "\r\n\n\r")
-        str = str.substring(0, 6) + toBytes ("\r\n\n\r") + str.substring(6)
+        str = str.substring(0, 6) + "\r\n\n\r".toBytes() + str.substring(6)
         //bstr = Array (bstr[0..<6]) + [13,10,10,13] + Array(bstr[6...])
         pieceTable.delete(offset: 5, cnt: 3)
         str = str.substring(0, 5) + str.substring(5 + 3)
@@ -1897,7 +1859,7 @@ class PieceTreeTextBufferTests: XCTestCase {
         for size in bufferSizes {
             let v: String = "abc123"
             var k: String = ""
-            for x in 0..<64*1024 {
+            for _ in 0..<64*1024 {
                 k += v
             }
             let pieceTable = createTextBuffer([k], size: size)
@@ -2012,7 +1974,7 @@ class PieceTreeTextBufferTests: XCTestCase {
 //
 //    })
 //
-    func getValueInSnapshot(snapshot: inout PieceTreeSnapshot) -> [UInt8] {
+    func getValueInSnapshot(snapshot: inout PieceTreeSnapshot<[UInt8]>) -> [UInt8] {
         var ret: [UInt8] = []
         var tmp = snapshot.read()
 

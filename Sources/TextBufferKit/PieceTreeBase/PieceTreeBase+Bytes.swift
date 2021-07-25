@@ -916,7 +916,7 @@ extension PieceTreeBase where V == [UInt8] {
         return String(bytes: getLinesRawContent(), encoding: .utf8)!
     }
 
-    private func getLineRawContent(_ _lineNumber: Int, _ endOffset: Int) -> V
+    internal func getLineRawContent(_ _lineNumber: Int, _ endOffset: Int) -> V
     {
         var lineNumber = _lineNumber
         var x = root
