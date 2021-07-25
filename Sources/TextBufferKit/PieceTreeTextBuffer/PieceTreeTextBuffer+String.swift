@@ -34,4 +34,37 @@ extension PieceTreeTextBuffer where V == String {
         self.init(BOM: BOM, eol: eol, pieceTree: pieceTree, containsRTL: containsRTL, isBasicASCII: isBasicASCII, eolNormalized: eolNormalized)
     }
 
+    public var eol: V {
+        get { pieceTree.eol }
+        set {
+            if newValue == "\n" || newValue == "\r\n" {
+                pieceTree.eol = newValue
+            }
+        }
+    }
+
+    public static func == (lhs: PieceTreeTextBuffer<V>, rhs: PieceTreeTextBuffer<V>) -> Bool
+    {
+        if (lhs.bom != rhs.bom) {
+            return false
+        }
+        if (lhs.eol != rhs.eol) {
+            return false
+        }
+        return PieceTreeBase.equal (left: lhs.pieceTree, right: rhs.pieceTree)
+    }
+
+    public func createSnapshot (preserveBOM: Bool) -> PieceTreeSnapshot<V>
+    {
+        return pieceTree.createSnapshot(bom: preserveBOM ? bom: V())
+    }
+
+    public func getOffsetAt(lineNumber: Int, column: Int) ->  Int
+    {
+        return pieceTree.getOffsetAt(lineNumber, column)
+    }
+
+    public func delete (offset: Int, count: Int) {
+        pieceTree.delete(offset: offset, cnt: count)
+    }
 }

@@ -240,6 +240,29 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
         length = len
         searchCache.validate(offset: length)
     }
+
+    func nodeCharCodeAt(_ node: TreeNode, _ offset: Int) -> V.Element {
+        //if node.piece.lineFeedCount < 1 {
+        //    return -1
+        //}
+        let stringBuffer = buffers[node.piece.bufferIndex]
+        let newOffset = stringBuffer.buffer.index(offsetInBuffer(node.piece.bufferIndex, node.piece.start), offsetBy: offset)
+        return stringBuffer.buffer [newOffset]
+    }
+
+    func offsetOfNode(_ _node: TreeNode) -> Int {
+        var node = _node
+        var pos = node.size_left
+        while node !== root {
+            if node.parent!.right === node {
+                pos += node.parent!.size_left + node.parent!.piece.length
+            }
+
+            node = node.parent!
+        }
+
+        return pos;
+    }
 }
 
 

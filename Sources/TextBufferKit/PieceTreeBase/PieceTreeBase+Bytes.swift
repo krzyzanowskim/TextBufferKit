@@ -145,7 +145,7 @@ extension PieceTreeBase where V == [UInt8] {
         return PieceTreeSnapshot(tree: self, bom: bom);
     }
 
-    public static func equal (left: PieceTreeBase, right: PieceTreeBase) -> Bool
+    static func equal (left: PieceTreeBase, right: PieceTreeBase) -> Bool
     {
         if left.length != right.length {
             return false
@@ -247,13 +247,13 @@ extension PieceTreeBase where V == [UInt8] {
             let node = startPosition.node
             let buffer = buffers[node.piece.bufferIndex].buffer
             let startOffset = offsetInBuffer(node.piece.bufferIndex, node.piece.start)
-            return V (buffer [(startOffset + startPosition.remainder)..<(startOffset + endPosition.remainder)])
+            return V (buffer [buffer.index(startOffset, offsetBy: startPosition.remainder)..<buffer.index(startOffset, offsetBy: endPosition.remainder)])
         }
 
         var x = startPosition.node
         var buffer = buffers[x.piece.bufferIndex].buffer
         let startOffset = offsetInBuffer(x.piece.bufferIndex, x.piece.start)
-        var ret = V (buffer [(startOffset + startPosition.remainder)..<(startOffset + x.piece.length)])
+        var ret = V (buffer [buffer.index(startOffset, offsetBy: startPosition.remainder)..<buffer.index(startOffset, offsetBy: x.piece.length)])
 
         x = x.next()
         while x !== TreeNode.SENTINEL {
@@ -261,10 +261,10 @@ extension PieceTreeBase where V == [UInt8] {
             let startOffset = offsetInBuffer(x.piece.bufferIndex, x.piece.start)
 
             if x === endPosition.node {
-                ret += Array (buffer [startOffset..<(startOffset + endPosition.remainder)])
+                ret += Array (buffer [startOffset..<buffer.index(startOffset, offsetBy: endPosition.remainder)])
                 break;
             } else {
-                ret += Array (buffer[startOffset..<(startOffset+x.piece.length)])
+                ret += Array (buffer[startOffset..<buffer.index(startOffset, offsetBy: x.piece.length)])
             }
 
             x = x.next()
@@ -1020,13 +1020,14 @@ extension PieceTreeBase where V == [UInt8] {
         let piece = node.piece
         let originalLFCnt = piece.lineFeedCount
         let originalEndOffset = offsetInBuffer(piece.bufferIndex, piece.end)
+        let stringBuffer = buffers[piece.bufferIndex]
 
         let newEnd = pos
         let newEndOffset = offsetInBuffer(piece.bufferIndex, newEnd)
         let newLineFeedCnt = getLineFeedCount(bufferIndex: piece.bufferIndex, start: piece.start, end: newEnd)
 
         let lf_delta = newLineFeedCnt - originalLFCnt
-        let size_delta = newEndOffset - originalEndOffset
+        let size_delta = stringBuffer.buffer.distance(from: originalEndOffset, to: newEndOffset)
         let newLength = piece.length + size_delta
 
         node.piece = Piece(bufferIndex: piece.bufferIndex, start: piece.start, end: newEnd, length: newLength, lineFeedCount: newLineFeedCnt)
@@ -1039,12 +1040,13 @@ extension PieceTreeBase where V == [UInt8] {
         let piece = node.piece
         let originalLFCnt = piece.lineFeedCount
         let originalStartOffset = offsetInBuffer(piece.bufferIndex, piece.start)
+        let stringBuffer = buffers[piece.bufferIndex]
 
         let newStart = pos
         let newLineFeedCnt = getLineFeedCount(bufferIndex: piece.bufferIndex, start: newStart, end: piece.end)
         let newStartOffset = offsetInBuffer(piece.bufferIndex, newStart)
         let lf_delta = newLineFeedCnt - originalLFCnt
-        let size_delta = originalStartOffset - newStartOffset
+        let size_delta = stringBuffer.buffer.distance(from: originalStartOffset, to: newStartOffset)
         let newLength = piece.length + size_delta
         node.piece = Piece(bufferIndex: piece.bufferIndex, start: newStart, end: piece.end, length: newLength, lineFeedCount: newLineFeedCnt)
 
@@ -1192,36 +1194,13 @@ extension PieceTreeBase where V == [UInt8] {
         return nil
     }
 
-    func nodeCharCodeAt(_ node: TreeNode, _ offset: Int) -> Int {
-        if node.piece.lineFeedCount < 1 {
-            return -1
-        }
-        let buffer = buffers[node.piece.bufferIndex]
-        let newOffset = offsetInBuffer(node.piece.bufferIndex, node.piece.start) + offset
-        return Int(buffer.buffer [newOffset])
-    }
-
-    func offsetOfNode(_ _node: TreeNode) -> Int {
-        var node = _node
-        var pos = node.size_left
-        while node !== root {
-            if node.parent!.right === node {
-                pos += node.parent!.size_left + node.parent!.piece.length
-            }
-
-            node = node.parent!
-        }
-
-        return pos;
-    }
-
     func shouldCheckCRLF() -> Bool {
-        return !(eolNormalized && eol == V([10]));
+        !(eolNormalized && eol == V([10]));
     }
 
     func startWithLF(_ val: V) -> Bool
     {
-        return val [0] == 10
+        val [0] == 10
     }
 
     func startWithLF(_ val: TreeNode) -> Bool
@@ -1232,14 +1211,15 @@ extension PieceTreeBase where V == [UInt8] {
 
         let piece = val.piece
         let lineStarts = buffers[piece.bufferIndex].lineStarts
+        let stringBuffer = buffers[piece.bufferIndex]
         let line = piece.start.line
-        let startOffset = lineStarts[line] + piece.start.column
+        let startOffset = stringBuffer.buffer.index(lineStarts[line], offsetBy: piece.start.column)
         if line == (lineStarts.count - 1) {
             // last line, so there is no line feed at the end of this line
             return false
         }
         let nextLineOffset = lineStarts[line + 1]
-        if nextLineOffset > startOffset + 1 {
+        if nextLineOffset > stringBuffer.buffer.index(after:startOffset) {
             return false
         }
         return buffers[piece.bufferIndex].buffer [startOffset] == 10

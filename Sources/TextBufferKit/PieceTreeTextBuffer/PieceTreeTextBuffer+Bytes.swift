@@ -37,22 +37,21 @@ extension PieceTreeTextBuffer where V == [UInt8] {
     public var eol: V {
         get { pieceTree.eol }
         set {
-            if newValue == V([10]) || newValue == V([10, 13]) {
+            if newValue == V([10]) || newValue == V([13, 10]) {
                 pieceTree.eol = newValue
             }
         }
     }
 
-    // #region TextBuffer
-    public static func == (left:PieceTreeTextBuffer, right: PieceTreeTextBuffer) -> Bool
+    public static func == (lhs:PieceTreeTextBuffer<V>, rhs: PieceTreeTextBuffer<V>) -> Bool
     {
-        if (left.bom != right.bom) {
+        if (lhs.bom != rhs.bom) {
             return false
         }
-        if (left.eol != right.eol) {
+        if (lhs.eol != rhs.eol) {
             return false
         }
-        return PieceTreeBase.equal (left: left.pieceTree, right: right.pieceTree)
+        return PieceTreeBase.equal (left: lhs.pieceTree, right: rhs.pieceTree)
     }
 
     public func createSnapshot (preserveBOM: Bool) -> PieceTreeSnapshot<V>
