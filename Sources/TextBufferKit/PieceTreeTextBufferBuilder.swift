@@ -38,7 +38,7 @@ public class PieceTreeTextBufferBuilder<V: RangeReplaceableCollection & Bidirect
     var lf: Int = 0
     var crlf: Int = 0
 
-    init (previousChar: V.Element? = nil) {
+    public init (previousChar: V.Element? = nil) {
         self.previousChar = previousChar
     }
 }

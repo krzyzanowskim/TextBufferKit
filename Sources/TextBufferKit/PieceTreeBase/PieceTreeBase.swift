@@ -115,7 +115,7 @@ public class PieceTreeBase<V: RangeReplaceableCollection & BidirectionalCollecti
     }
 
     func getAccumulatedValue(node: TreeNode, index: Int) -> Int { // V.IndexDistance
-        guard index >= 0 else {
+        if index < 0 {
             return 0
         }
 
